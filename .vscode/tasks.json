@@ -1,0 +1,64 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Flutter: Run Mobile App",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/mobile"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Flutter: Build APK",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"build",
+				"apk",
+				"--debug"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/mobile"
+			},
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "PHP: Serve Backend (Laravel)",
+			"type": "shell",
+			"command": "php",
+			"args": [
+				"artisan",
+				"serve"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/backend"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Composer: Install Backend Dependencies",
+			"type": "shell",
+			"command": "composer",
+			"args": [
+				"install"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/backend"
+			},
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
