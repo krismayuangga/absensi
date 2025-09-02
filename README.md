@@ -1,6 +1,14 @@
-# 📱 Attendance & KPI Management System with Field Work Detection
+# � Attendance & KPI Management System
 
-Modern attendance and KPI management 4. **Start Server**
+Modern attendance and KPI management system with Flutter mobile app and Laravel REST API backend.
+
+## ✅ Current Status: **Info & Media System FULLY WORKING!**
+
+- **Backend**: Laravel REST API with JWT authentication ✅
+- **Frontend**: Flutter Mobile App with Provider state management ✅  
+- **Database**: MySQL with complete schema (15+ tables) ✅
+- **Info & Media**: Announcements and Media Gallery **100% FUNCTIONAL** ✅
+- **GitHub**: Repository created and initial commit pushed ✅ 4. **Start Server**
 ```bash
 php artisan serve
 ```
