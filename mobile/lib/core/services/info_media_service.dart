@@ -85,7 +85,15 @@ class InfoMediaService {
     try {
       _addAuthToken();
 
+      print('🌐 Fetching announcement details for ID: $id');
+      print(
+          '🔗 Request URL: ${_dio.options.baseUrl}/info-media/announcements/$id');
+      print('🔑 Auth header: ${_dio.options.headers['Authorization']}');
+
       final response = await _dio.get('/info-media/announcements/$id');
+
+      print('📊 Response status: ${response.statusCode}');
+      print('📄 Response data: ${response.data}');
 
       if (response.statusCode == 200) {
         print('✅ SUCCESS: Loaded announcement details for ID: $id');
@@ -101,34 +109,12 @@ class InfoMediaService {
       };
     } catch (e) {
       print('❌ Error loading announcement details: $e');
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
-    }
-  }
-
-  /// Toggle like on announcement
-  Future<Map<String, dynamic>> toggleAnnouncementLike(int id) async {
-    try {
-      _addAuthToken();
-
-      final response = await _dio.post('/v1/announcements/$id/like');
-
-      if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': response.data['data'],
-          'message': response.data['message'],
-        };
+      if (e is DioException) {
+        print('🚨 Dio Error Details:');
+        print('   Status Code: ${e.response?.statusCode}');
+        print('   Response Data: ${e.response?.data}');
+        print('   Message: ${e.message}');
       }
-
-      return {
-        'success': false,
-        'message': response.data['message'] ?? 'Gagal menyukai pengumuman',
-      };
-    } catch (e) {
-      print('❌ Error toggling announcement like: $e');
       return {
         'success': false,
         'message': 'Error: $e',
@@ -181,31 +167,14 @@ class InfoMediaService {
   }
 
   /// Toggle like on comment
-  Future<Map<String, dynamic>> toggleCommentLike(int commentId) async {
+  Future<void> toggleCommentLike(int commentId) async {
     try {
       _addAuthToken();
 
-      final response =
-          await _dio.post('/v1/announcements/comments/$commentId/like');
-
-      if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': response.data['data'],
-          'message': response.data['message'],
-        };
-      }
-
-      return {
-        'success': false,
-        'message': response.data['message'] ?? 'Gagal menyukai komentar',
-      };
+      await _dio.post('/info-media/comments/$commentId/like');
     } catch (e) {
       print('❌ Error toggling comment like: $e');
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      throw Exception('Gagal mengubah like komentar: $e');
     }
   }
 
@@ -448,6 +417,79 @@ class InfoMediaService {
         'success': false,
         'message': 'Error: $e',
       };
+    }
+  }
+
+  // LIKE & COMMENT METHODS
+
+  /// Toggle like on announcement
+  Future<Map<String, dynamic>> toggleAnnouncementLike(
+      int announcementId) async {
+    try {
+      _addAuthToken();
+
+      final response =
+          await _dio.post('/info-media/announcements/$announcementId/like');
+
+      if (response.statusCode == 200) {
+        return response.data;
+      }
+
+      return {
+        'success': false,
+        'message': response.data['message'] ?? 'Gagal mengubah like',
+      };
+    } catch (e) {
+      print('❌ Error toggling announcement like: $e');
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
+
+  /// Add comment to announcement
+  Future<Map<String, dynamic>?> addComment(int announcementId, String content,
+      {int? parentId}) async {
+    try {
+      _addAuthToken();
+
+      final data = {
+        'comment':
+            content, // Changed from 'content' to 'comment' to match Laravel validation
+        if (parentId != null) 'parent_id': parentId,
+      };
+
+      print('🔄 Adding comment to announcement $announcementId');
+      print('📤 Request data: $data');
+
+      final response = await _dio.post(
+          '/info-media/announcements/$announcementId/comments',
+          data: data);
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response data: ${response.data}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return response.data['comment'];
+      }
+
+      return null;
+    } catch (e) {
+      print('❌ Error adding comment: $e');
+      throw Exception('Gagal menambahkan komentar: $e');
+    }
+  }
+
+  /// Delete comment
+  Future<void> deleteComment(int commentId) async {
+    try {
+      _addAuthToken();
+
+      await _dio.delete('/info-media/comments/$commentId');
+    } catch (e) {
+      print('❌ Error deleting comment: $e');
+      throw Exception('Gagal menghapus komentar: $e');
     }
   }
 }

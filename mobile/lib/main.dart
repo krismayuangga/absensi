@@ -9,6 +9,7 @@ import 'core/providers/kpi_provider.dart';
 import 'core/providers/leave_provider.dart';
 import 'core/providers/notification_provider.dart';
 import 'core/providers/info_media_provider.dart';
+import 'core/providers/profile_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/auth/login_screen.dart';
@@ -42,6 +43,7 @@ class MyApp extends StatelessWidget {
             ChangeNotifierProvider(create: (_) => LeaveProvider()),
             ChangeNotifierProvider(create: (_) => NotificationProvider()),
             ChangeNotifierProvider(create: (_) => InfoMediaProvider()),
+            ChangeNotifierProvider(create: (_) => ProfileProvider()),
           ],
           child: MaterialApp(
             title: 'Attendance & KPI',

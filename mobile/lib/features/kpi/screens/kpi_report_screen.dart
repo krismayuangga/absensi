@@ -39,7 +39,8 @@ class _KpiReportScreenState extends State<KpiReportScreen>
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.purple,
+        backgroundColor: const Color(
+            0xFF4A9B8E), // Ganti dari Colors.purple ke tema konsisten
         elevation: 0,
         title: Text(
           'Laporan KPI',
@@ -95,7 +96,7 @@ class _KpiReportScreenState extends State<KpiReportScreen>
         builder: (context, kpiProvider, child) {
           if (kpiProvider.isLoading) {
             return const Center(
-              child: CircularProgressIndicator(color: Colors.purple),
+              child: CircularProgressIndicator(color: const Color(0xFF4A9B8E)),
             );
           }
 
@@ -124,14 +125,14 @@ class _KpiReportScreenState extends State<KpiReportScreen>
             padding: EdgeInsets.all(20.w),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.purple.shade600, Colors.purple.shade800],
+                colors: [const Color(0xFF4A9B8E), const Color(0xFF45A29E)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.purple.withOpacity(0.3),
+                  color: const Color(0xFF4A9B8E).withOpacity(0.3),
                   spreadRadius: 2,
                   blurRadius: 8,
                   offset: const Offset(0, 4),
@@ -217,20 +218,21 @@ class _KpiReportScreenState extends State<KpiReportScreen>
 
   Widget _buildSummaryItem(String label, String value, IconData icon) {
     return Container(
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.all(8.w), // Kurangi dari 12.w ke 8.w
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(8.r), // Kurangi dari 12.r ke 8.r
         border: Border.all(color: Colors.white.withOpacity(0.3)),
       ),
       child: Column(
         children: [
-          Icon(icon, color: Colors.white, size: 20.w),
-          SizedBox(height: 8.h),
+          Icon(icon,
+              color: Colors.white, size: 16.w), // Kurangi dari 20.w ke 16.w
+          SizedBox(height: 4.h), // Kurangi dari 8.h ke 4.h
           Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 16.sp,
+              fontSize: 14.sp, // Kurangi dari 16.sp ke 14.sp
               fontWeight: FontWeight.w600,
               color: Colors.white,
             ),
@@ -238,10 +240,11 @@ class _KpiReportScreenState extends State<KpiReportScreen>
           Text(
             label,
             style: GoogleFonts.inter(
-              fontSize: 10.sp,
+              fontSize: 9.sp, // Kurangi dari 10.sp ke 9.sp
               color: Colors.white.withOpacity(0.9),
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
           ),
         ],
       ),
@@ -412,12 +415,12 @@ class _KpiReportScreenState extends State<KpiReportScreen>
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: Colors.purple.shade100,
+              color: const Color(0xFF4A9B8E).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Icon(
               Icons.person,
-              color: Colors.purple.shade600,
+              color: const Color(0xFF4A9B8E),
               size: 16.w,
             ),
           ),
@@ -523,12 +526,12 @@ class _KpiReportScreenState extends State<KpiReportScreen>
                   LineChartBarData(
                     spots: _generateTrendData(kpiProvider),
                     isCurved: true,
-                    color: Colors.purple,
+                    color: const Color(0xFF4A9B8E),
                     barWidth: 3,
                     dotData: FlDotData(show: true),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Colors.purple.withOpacity(0.3),
+                      color: const Color(0xFF4A9B8E).withOpacity(0.3),
                     ),
                   ),
                 ],

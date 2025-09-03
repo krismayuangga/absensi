@@ -173,38 +173,6 @@ class InfoMediaProvider extends ChangeNotifier {
   }
 
   /// Toggle like on announcement
-  Future<bool> toggleAnnouncementLike(int id) async {
-    try {
-      final result = await _service.toggleAnnouncementLike(id);
-
-      if (result['success'] == true) {
-        final data = result['data'] as Map<String, dynamic>;
-        final isLiked = data['is_liked'] as bool;
-        final likeCount = data['like_count'] as int;
-
-        // Update announcement in list
-        final index = _announcements.indexWhere((a) => a['id'] == id);
-        if (index != -1) {
-          _announcements[index]['user_interactions']['is_liked'] = isLiked;
-          _announcements[index]['stats']['like_count'] = likeCount;
-        }
-
-        // Update current announcement if viewing details
-        if (_currentAnnouncement?['id'] == id) {
-          _currentAnnouncement!['user_interactions']['is_liked'] = isLiked;
-          _currentAnnouncement!['stats']['like_count'] = likeCount;
-        }
-
-        notifyListeners();
-        return true;
-      }
-      return false;
-    } catch (e) {
-      print('❌ Error toggling like: $e');
-      return false;
-    }
-  }
-
   /// Add comment to announcement
   Future<bool> addAnnouncementComment(int id, String comment,
       {int? parentId}) async {
@@ -226,25 +194,6 @@ class InfoMediaProvider extends ChangeNotifier {
       print('❌ Error adding comment: $e');
       _errorMessage = 'Gagal menambahkan komentar: $e';
       notifyListeners();
-      return false;
-    }
-  }
-
-  /// Toggle like on comment
-  Future<bool> toggleCommentLike(int commentId) async {
-    try {
-      final result = await _service.toggleCommentLike(commentId);
-
-      if (result['success'] == true) {
-        // Refresh current announcement to update comment likes
-        if (_currentAnnouncement != null) {
-          await loadAnnouncementDetails(_currentAnnouncement!['id']);
-        }
-        return true;
-      }
-      return false;
-    } catch (e) {
-      print('❌ Error toggling comment like: $e');
       return false;
     }
   }
@@ -442,6 +391,148 @@ class InfoMediaProvider extends ChangeNotifier {
         return 'Rendah';
       default:
         return 'Sedang';
+    }
+  }
+
+  // LIKE & COMMENT METHODS
+
+  /// Toggle like on announcement
+  Future<bool> toggleAnnouncementLike(int announcementId) async {
+    try {
+      await _service.toggleAnnouncementLike(announcementId);
+
+      // Update current announcement if it's the one being liked
+      if (_currentAnnouncement != null &&
+          _currentAnnouncement!['id'] == announcementId) {
+        _currentAnnouncement!['user_interactions'] =
+            _currentAnnouncement!['user_interactions'] ?? {};
+        _currentAnnouncement!['stats'] = _currentAnnouncement!['stats'] ?? {};
+
+        bool isLiked =
+            _currentAnnouncement!['user_interactions']['is_liked'] ?? false;
+        int likeCount = _currentAnnouncement!['stats']['like_count'] ?? 0;
+
+        _currentAnnouncement!['user_interactions']['is_liked'] = !isLiked;
+        _currentAnnouncement!['stats']['like_count'] =
+            !isLiked ? likeCount + 1 : likeCount - 1;
+      }
+
+      // Update announcement in the list
+      for (int i = 0; i < _announcements.length; i++) {
+        if (_announcements[i]['id'] == announcementId) {
+          _announcements[i]['user_interactions'] =
+              _announcements[i]['user_interactions'] ?? {};
+          _announcements[i]['stats'] = _announcements[i]['stats'] ?? {};
+
+          bool isLiked =
+              _announcements[i]['user_interactions']['is_liked'] ?? false;
+          int likeCount = _announcements[i]['stats']['like_count'] ?? 0;
+
+          _announcements[i]['user_interactions']['is_liked'] = !isLiked;
+          _announcements[i]['stats']['like_count'] =
+              !isLiked ? likeCount + 1 : likeCount - 1;
+          break;
+        }
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error toggling like: $e');
+      return false;
+    }
+  }
+
+  /// Add comment to announcement
+  Future<bool> addComment(int announcementId, String content,
+      {int? parentId}) async {
+    try {
+      final newComment = await _service.addComment(announcementId, content,
+          parentId: parentId);
+
+      if (newComment != null &&
+          _currentAnnouncement != null &&
+          _currentAnnouncement!['id'] == announcementId) {
+        _currentAnnouncement!['comments'] =
+            _currentAnnouncement!['comments'] ?? [];
+        _currentAnnouncement!['stats'] = _currentAnnouncement!['stats'] ?? {};
+
+        (_currentAnnouncement!['comments'] as List).insert(0, newComment);
+        int commentCount = _currentAnnouncement!['stats']['comment_count'] ?? 0;
+        _currentAnnouncement!['stats']['comment_count'] = commentCount + 1;
+
+        // Update comment count in announcements list
+        for (int i = 0; i < _announcements.length; i++) {
+          if (_announcements[i]['id'] == announcementId) {
+            _announcements[i]['stats'] = _announcements[i]['stats'] ?? {};
+            _announcements[i]['stats']['comment_count'] = commentCount + 1;
+            break;
+          }
+        }
+
+        notifyListeners();
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Error adding comment: $e');
+      return false;
+    }
+  }
+
+  /// Delete comment
+  Future<bool> deleteComment(int commentId) async {
+    try {
+      await _service.deleteComment(commentId);
+
+      if (_currentAnnouncement != null) {
+        final comments = _currentAnnouncement!['comments'] as List? ?? [];
+        comments.removeWhere((comment) => comment['id'] == commentId);
+
+        _currentAnnouncement!['stats'] = _currentAnnouncement!['stats'] ?? {};
+        int commentCount = _currentAnnouncement!['stats']['comment_count'] ?? 0;
+        _currentAnnouncement!['stats']['comment_count'] =
+            commentCount > 0 ? commentCount - 1 : 0;
+
+        notifyListeners();
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting comment: $e');
+      return false;
+    }
+  }
+
+  /// Toggle like on comment
+  Future<bool> toggleCommentLike(int commentId) async {
+    try {
+      await _service.toggleCommentLike(commentId);
+
+      if (_currentAnnouncement != null) {
+        final comments = _currentAnnouncement!['comments'] as List? ?? [];
+        for (var comment in comments) {
+          if (comment['id'] == commentId) {
+            comment['user_interactions'] = comment['user_interactions'] ?? {};
+            comment['stats'] = comment['stats'] ?? {};
+
+            bool isLiked = comment['user_interactions']['is_liked'] ?? false;
+            int likeCount = comment['stats']['like_count'] ?? 0;
+
+            comment['user_interactions']['is_liked'] = !isLiked;
+            comment['stats']['like_count'] =
+                !isLiked ? likeCount + 1 : likeCount - 1;
+            break;
+          }
+        }
+
+        notifyListeners();
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Error toggling comment like: $e');
+      return false;
     }
   }
 }

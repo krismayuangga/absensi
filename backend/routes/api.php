@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\DebugKpiController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\MediaController;
-use App\Http\Controllers\Api\PushNotificationController;
+use App\Http\Controllers\Api\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -134,6 +134,14 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
     });
 
+    // Profile routes
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [ProfileController::class, 'getUserProfile']);
+        Route::put('/', [ProfileController::class, 'updateProfile']);
+        Route::post('change-password', [ProfileController::class, 'changePassword']);
+        Route::post('upload-image', [ProfileController::class, 'uploadProfileImage']);
+    });
+
         // Attendance routes
         Route::prefix('attendance')->group(function () {
             Route::get('today', [AttendanceController::class, 'getTodayAttendance']);
@@ -190,12 +198,6 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
                 Route::get('{media}', [MediaController::class, 'show']);
                 Route::get('{media}/download', [MediaController::class, 'download']);
             });
-        });
-
-        // Push notification management
-        Route::prefix('push-notifications')->group(function () {
-            Route::post('register-token', [PushNotificationController::class, 'registerToken']);
-            Route::post('test', [PushNotificationController::class, 'sendTest']);
         });
 
         // Admin Dashboard routes (for admin role only)

@@ -5,6 +5,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/profile_provider.dart';
+import 'screens/edit_profile_screen.dart';
+import 'screens/change_password_screen.dart';
+import 'screens/notification_settings_screen.dart';
+import 'screens/language_settings_screen.dart';
+import 'screens/theme_settings_screen.dart';
 
 class ProfileMainScreen extends StatefulWidget {
   const ProfileMainScreen({super.key});
@@ -15,11 +21,19 @@ class ProfileMainScreen extends StatefulWidget {
 
 class _ProfileMainScreenState extends State<ProfileMainScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ProfileProvider>(context, listen: false).loadUserProfile();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.teal,
+        backgroundColor: AppTheme.primaryColor,
         elevation: 0,
         title: Text(
           'Profil',
@@ -107,6 +121,43 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                           ),
                         ),
                       ),
+                      SizedBox(height: 12.h),
+                      // Edit Profile Button
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const EditProfileScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppTheme.primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20.w,
+                            vertical: 8.h,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.edit, size: 16.r),
+                            SizedBox(width: 4.w),
+                            Text(
+                              'Edit Profil',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -144,16 +195,37 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                 // Account Settings
                 _buildSection('Pengaturan Akun', [
                   _buildMenuButton('Ganti Password', Icons.lock, () {
-                    _showChangePasswordDialog();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChangePasswordScreen(),
+                      ),
+                    );
                   }),
                   _buildMenuButton('Notifikasi', Icons.notifications, () {
-                    _showNotificationSettings();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const NotificationSettingsScreen(),
+                      ),
+                    );
                   }),
                   _buildMenuButton('Bahasa', Icons.language, () {
-                    _showLanguageSettings();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LanguageSettingsScreen(),
+                      ),
+                    );
                   }),
                   _buildMenuButton('Tema', Icons.palette, () {
-                    _showThemeSettings();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ThemeSettingsScreen(),
+                      ),
+                    );
                   }),
                 ]),
 
@@ -412,36 +484,6 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
           ],
         );
       },
-    );
-  }
-
-  void _showChangePasswordDialog() {
-    // TODO: Implement change password
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Fitur ganti password akan segera tersedia!')),
-    );
-  }
-
-  void _showNotificationSettings() {
-    // TODO: Implement notification settings
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Pengaturan notifikasi akan segera tersedia!')),
-    );
-  }
-
-  void _showLanguageSettings() {
-    // TODO: Implement language settings
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pengaturan bahasa akan segera tersedia!')),
-    );
-  }
-
-  void _showThemeSettings() {
-    // TODO: Implement theme settings
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pengaturan tema akan segera tersedia!')),
     );
   }
 

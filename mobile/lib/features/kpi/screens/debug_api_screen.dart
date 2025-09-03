@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/services/kpi_service.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../core/config/app_config.dart';
 
 class DebugApiScreen extends StatefulWidget {
   const DebugApiScreen({super.key});

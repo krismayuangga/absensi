@@ -44,7 +44,7 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF4A9B8E), // Ganti dari Colors.blue
         elevation: 0,
         title: Text(
           'Detail Pengumuman',
@@ -652,7 +652,7 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
     if (comment.isEmpty) return;
 
     provider
-        .addAnnouncementComment(
+        .addComment(
       widget.announcementId,
       comment,
       parentId: _replyToCommentId,

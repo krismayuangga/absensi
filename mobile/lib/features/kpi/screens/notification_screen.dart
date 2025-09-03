@@ -28,7 +28,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.purple,
+        backgroundColor: const Color(0xFF4A9B8E), // Ganti dari Colors.purple
         elevation: 0,
         title: Text(
           'Notifikasi',
@@ -90,7 +90,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           if (notificationProvider.isLoading) {
             return const Center(
               child: CircularProgressIndicator(
-                color: Colors.purple,
+                color: const Color(0xFF4A9B8E),
               ),
             );
           }
@@ -101,31 +101,33 @@ class _NotificationScreenState extends State<NotificationScreen> {
             children: [
               // Summary Card
               Container(
-                margin: EdgeInsets.all(16.w),
-                padding: EdgeInsets.all(16.w),
+                margin: EdgeInsets.all(12.w), // Kurangi dari 16.w ke 12.w
+                padding: EdgeInsets.all(12.w), // Kurangi dari 16.w ke 12.w
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.purple.shade600, Colors.purple.shade800],
+                    colors: [const Color(0xFF4A9B8E), const Color(0xFF45A29E)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(16.r),
+                  borderRadius:
+                      BorderRadius.circular(12.r), // Kurangi dari 16.r ke 12.r
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(12.w),
+                      padding: EdgeInsets.all(8.w), // Kurangi dari 12.w ke 8.w
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12.r),
+                        borderRadius: BorderRadius.circular(
+                            8.r), // Kurangi dari 12.r ke 8.r
                       ),
                       child: Icon(
                         Icons.notifications_active,
                         color: Colors.white,
-                        size: 24.w,
+                        size: 20.w, // Kurangi dari 24.w ke 20.w
                       ),
                     ),
-                    SizedBox(width: 16.w),
+                    SizedBox(width: 12.w), // Kurangi dari 16.w ke 12.w
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +201,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                       )
                     : RefreshIndicator(
-                        color: Colors.purple,
+                        color: const Color(0xFF4A9B8E),
                         onRefresh: () async {
                           await notificationProvider.loadNotifications();
                         },
@@ -243,15 +245,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: EdgeInsets.only(bottom: 8.h), // Kurangi dari 12.h ke 8.h
       child: InkWell(
         onTap: () => _handleNotificationTap(notification, index),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(10.r), // Kurangi dari 12.r ke 10.r
         child: Container(
-          padding: EdgeInsets.all(16.w),
+          padding: EdgeInsets.all(12.w), // Kurangi dari 16.w ke 12.w
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius:
+                BorderRadius.circular(10.r), // Kurangi dari 12.r ke 10.r
             border: Border.all(
               color: isUnread
                   ? priorityColor.withOpacity(0.3)
@@ -260,7 +263,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withOpacity(0.08), // Kurangi opacity shadow
                 spreadRadius: 1,
                 blurRadius: 4,
                 offset: const Offset(0, 2),
@@ -483,7 +486,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               // Navigate to visit logger or update result form
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.purple,
+              backgroundColor: const Color(0xFF4A9B8E),
               foregroundColor: Colors.white,
             ),
             child: const Text('Follow-up Sekarang'),

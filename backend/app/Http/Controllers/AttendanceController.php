@@ -73,11 +73,11 @@ class AttendanceController extends Controller
             $user = Auth::user();
             $today = Carbon::today();
 
-            // Office location configuration
-            $officeConfig = config('attendance.office');
-            $officeLat = $officeConfig['latitude'];
-            $officeLng = $officeConfig['longitude'];
-            $officeRadius = $officeConfig['radius'];
+            // Office location configuration with defensive programming
+            $officeConfig = config('attendance.office', []);
+            $officeLat = $officeConfig['latitude'] ?? -6.200000;
+            $officeLng = $officeConfig['longitude'] ?? 106.816666;
+            $officeRadius = $officeConfig['radius'] ?? 100;
 
             // Calculate distance from office
             $distance = $this->calculateDistance(
@@ -90,12 +90,12 @@ class AttendanceController extends Controller
             $isInOffice = $distance <= $officeRadius;
             $workType = $request->work_type ?? ($isInOffice ? 'office' : 'field_work');
 
-            // Validation for field work
+            // Validation for field work with defensive programming
             if (!$isInOffice && $workType !== 'office') {
-                $fieldWorkConfig = config('attendance.field_work');
+                $fieldWorkConfig = config('attendance.field_work', []);
                 
                 // Mandatory photo for field work
-                if ($fieldWorkConfig['mandatory_photo'] && !$request->hasFile('photo')) {
+                if (($fieldWorkConfig['mandatory_photo'] ?? false) && !$request->hasFile('photo')) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Foto selfie wajib untuk absensi di luar kantor'
@@ -103,7 +103,7 @@ class AttendanceController extends Controller
                 }
 
                 // Mandatory activity description for field work
-                if ($fieldWorkConfig['mandatory_description'] && empty($request->activity_description)) {
+                if (($fieldWorkConfig['mandatory_description'] ?? false) && empty($request->activity_description)) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Deskripsi kegiatan wajib diisi untuk absensi di luar kantor'

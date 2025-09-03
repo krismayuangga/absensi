@@ -22,6 +22,24 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Auto-fill for testing
+    _emailController.text = 'admin@test.com';
+    _passwordController.text = '123456';
+
+    // Auto-login for testing (optional - you can enable/disable)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleAutoLogin();
+    });
+  }
+
+  Future<void> _handleAutoLogin() async {
+    print('🔐 Attempting auto-login for testing...');
+    await _handleLogin();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();

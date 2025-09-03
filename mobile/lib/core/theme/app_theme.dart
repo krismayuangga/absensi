@@ -155,16 +155,16 @@ class AppTheme {
         ),
         scaffoldBackgroundColor: backgroundColor,
         appBarTheme: AppBarTheme(
-          backgroundColor: surfaceColor,
-          foregroundColor: textPrimaryColor,
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
           elevation: 0,
           shadowColor: primaryColor.withOpacity(0.1),
           titleTextStyle: GoogleFonts.poppins(
-            color: textPrimaryColor,
+            color: Colors.white,
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
           ),
-          iconTheme: const IconThemeData(color: textPrimaryColor),
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         cardTheme: CardThemeData(
           color: surfaceColor,

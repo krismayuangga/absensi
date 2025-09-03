@@ -41,7 +41,6 @@ class _InfoMediaScreenState extends State<InfoMediaScreen>
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.blue,
         elevation: 0,
         title: Text(
           'Info & Media',

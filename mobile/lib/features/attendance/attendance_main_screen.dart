@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/providers/attendance_provider.dart';
 import '../attendance/clock_in_out_screen.dart';
 
 class AttendanceMainScreen extends StatefulWidget {
@@ -13,6 +15,18 @@ class AttendanceMainScreen extends StatefulWidget {
 }
 
 class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load today's attendance when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final attendanceProvider = context.read<AttendanceProvider>();
+      attendanceProvider.loadTodayAttendance();
+      attendanceProvider.loadAttendanceHistory(limit: 5);
+      attendanceProvider.loadAttendanceStats();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,17 +117,36 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                   ),
                 ],
               ),
-              child: Column(
-                children: [
-                  _buildStatusRow(
-                      'Masuk Kerja', '--:--', Icons.login, Colors.green),
-                  Divider(height: 20.h),
-                  _buildStatusRow(
-                      'Pulang Kerja', '--:--', Icons.logout, Colors.orange),
-                  Divider(height: 20.h),
-                  _buildStatusRow(
-                      'Total Jam', '--:--', Icons.schedule, Colors.blue),
-                ],
+              child: Consumer<AttendanceProvider>(
+                builder: (context, attendanceProvider, child) {
+                  if (attendanceProvider.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      _buildStatusRow(
+                          'Masuk Kerja',
+                          attendanceProvider.getClockInTimeFormatted(),
+                          Icons.login,
+                          Colors.green),
+                      Divider(height: 20.h),
+                      _buildStatusRow(
+                          'Pulang Kerja',
+                          attendanceProvider.getClockOutTimeFormatted(),
+                          Icons.logout,
+                          Colors.orange),
+                      Divider(height: 20.h),
+                      _buildStatusRow(
+                          'Total Jam',
+                          attendanceProvider.getWorkingHoursFormatted(),
+                          Icons.schedule,
+                          Colors.blue),
+                    ],
+                  );
+                },
               ),
             ),
 
@@ -144,22 +177,33 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildSummaryItem('5', 'Hari Hadir', Colors.green),
-                  ),
-                  Container(
-                      width: 1, height: 40.h, color: Colors.grey.shade300),
-                  Expanded(
-                    child: _buildSummaryItem('40', 'Total Jam', Colors.blue),
-                  ),
-                  Container(
-                      width: 1, height: 40.h, color: Colors.grey.shade300),
-                  Expanded(
-                    child: _buildSummaryItem('1', 'Terlambat', Colors.orange),
-                  ),
-                ],
+              child: Consumer<AttendanceProvider>(
+                builder: (context, attendanceProvider, child) {
+                  final stats = attendanceProvider.attendanceStats;
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: _buildSummaryItem('${stats?.presentDays ?? 0}',
+                            'Hari Hadir', Colors.green),
+                      ),
+                      Container(
+                          width: 1, height: 40.h, color: Colors.grey.shade300),
+                      Expanded(
+                        child: _buildSummaryItem(
+                            '${stats?.averageWorkingHours.toStringAsFixed(0) ?? "0"}',
+                            'Rata-rata Jam',
+                            Colors.blue),
+                      ),
+                      Container(
+                          width: 1, height: 40.h, color: Colors.grey.shade300),
+                      Expanded(
+                        child: _buildSummaryItem('${stats?.lateDays ?? 0}',
+                            'Terlambat', Colors.orange),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
 
@@ -190,24 +234,106 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                   ),
                 ],
               ),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.history,
-                      size: 48.w,
-                      color: Colors.grey.shade400,
-                    ),
-                    SizedBox(height: 12.h),
-                    Text(
-                      'Riwayat absensi akan muncul di sini',
-                      style: GoogleFonts.inter(
-                        fontSize: 14.sp,
-                        color: Colors.grey.shade600,
+              child: Consumer<AttendanceProvider>(
+                builder: (context, attendanceProvider, child) {
+                  if (attendanceProvider.attendanceHistory.isEmpty) {
+                    return Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.history,
+                            size: 48.w,
+                            color: Colors.grey.shade400,
+                          ),
+                          SizedBox(height: 12.h),
+                          Text(
+                            'Riwayat absensi akan muncul di sini',
+                            style: GoogleFonts.inter(
+                              fontSize: 14.sp,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      ...attendanceProvider.attendanceHistory
+                          .take(3)
+                          .map(
+                            (attendance) => Container(
+                              margin: EdgeInsets.only(bottom: 12.h),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 32.w,
+                                    height: 32.w,
+                                    decoration: BoxDecoration(
+                                      color: _getStatusColor(attendance.status)
+                                          .withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8.r),
+                                    ),
+                                    child: Icon(
+                                      Icons.login,
+                                      size: 16.w,
+                                      color: _getStatusColor(attendance.status),
+                                    ),
+                                  ),
+                                  SizedBox(width: 12.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          attendance.statusIndonesian,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppTheme.textPrimary,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${attendance.date.day}/${attendance.date.month}/${attendance.date.year}',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12.sp,
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    attendance.clockInTimeFormatted ?? '--:--',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      if (attendanceProvider.attendanceHistory.length > 3)
+                        TextButton(
+                          onPressed: () {
+                            // Navigate to full history
+                          },
+                          child: Text(
+                            'Lihat semua aktivitas',
+                            style: GoogleFonts.inter(
+                              fontSize: 14.sp,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -338,5 +464,22 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
         ),
       ],
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'present':
+        return Colors.green;
+      case 'late':
+        return Colors.orange;
+      case 'absent':
+        return Colors.red;
+      case 'sick':
+        return Colors.purple;
+      case 'leave':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
   }
 }

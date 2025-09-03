@@ -8,6 +8,7 @@ import '../../core/providers/attendance_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../attendance/clock_in_out_screen.dart';
 import '../leave/screens/leave_screen.dart';
+import '../../main_navigation.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -602,34 +603,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _handleKPI() {
-    // Will be handled by bottom navigation
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content:
-            Text('Gunakan tab KPI di navigasi bawah untuk melihat kinerja!'),
-        backgroundColor: Colors.purple,
-      ),
-    );
+    // Navigate to KPI tab (index 2)
+    NavigationController.changeTab(2);
   }
 
   void _handleInfo() {
-    // Will be handled by bottom navigation
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Gunakan tab Info di navigasi bawah untuk pengumuman!'),
-        backgroundColor: Colors.blue,
-      ),
-    );
+    // Navigate to Info tab (index 3)
+    NavigationController.changeTab(3);
   }
 
   void _handleHistory() {
-    // Navigate to attendance history
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Riwayat absensi akan segera tersedia!'),
-        backgroundColor: Colors.indigo,
-      ),
-    );
+    // Navigate to Attendance tab (index 1) which contains history
+    NavigationController.changeTab(1);
   }
 
   void _showLogoutDialog(BuildContext context) {

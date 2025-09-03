@@ -32,33 +32,92 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'] ?? 0,
-      employeeId: json['employee_id'] ?? '',
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'],
-      birthDate: json['birth_date'],
-      gender: json['gender'],
-      address: json['address'],
-      avatar: json['avatar'],
-      role: json['role'] ?? 'employee',
-      status:
-          json['status'] ?? (json['is_active'] == true ? 'active' : 'inactive'),
-      department: json['department'] != null && json['department'] is Map
-          ? Department.fromJson(Map<String, dynamic>.from(json['department']))
-          : json['department'] is String
-              ? Department(id: 0, name: json['department'])
-              : null,
-      position: json['position'] != null && json['position'] is Map
-          ? Position.fromJson(Map<String, dynamic>.from(json['position']))
-          : json['position'] is String
-              ? Position(id: 0, name: json['position'], level: 1)
-              : null,
-      company: json['company'] != null && json['company'] is Map
-          ? Company.fromJson(Map<String, dynamic>.from(json['company']))
-          : null,
-    );
+    try {
+      return UserModel(
+        id: _parseInt(json['id']),
+        employeeId: json['employee_id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        email: json['email']?.toString() ?? '',
+        phone: json['phone']?.toString(),
+        birthDate: json['birth_date']?.toString(),
+        gender: json['gender']?.toString(),
+        address: json['address']?.toString(),
+        avatar: json['avatar']?.toString(),
+        role: json['role']?.toString() ?? 'employee',
+        status: json['status']?.toString() ??
+            (json['is_active'] == true ? 'active' : 'inactive'),
+        department: _parseDepartment(json['department']),
+        position: _parsePosition(json['position']),
+        company: _parseCompany(json['company']),
+      );
+    } catch (e) {
+      print('Error parsing UserModel: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+    return 0;
+  }
+
+  static Department? _parseDepartment(dynamic dept) {
+    try {
+      if (dept == null) return null;
+      if (dept is String) {
+        return Department(id: 0, name: dept);
+      }
+      if (dept is Map<String, dynamic>) {
+        return Department.fromJson(dept);
+      }
+      if (dept is Map) {
+        return Department.fromJson(Map<String, dynamic>.from(dept));
+      }
+      return null;
+    } catch (e) {
+      print('Error parsing Department: $e');
+      return null;
+    }
+  }
+
+  static Position? _parsePosition(dynamic pos) {
+    try {
+      if (pos == null) return null;
+      if (pos is String) {
+        return Position(id: 0, name: pos, level: 1);
+      }
+      if (pos is Map<String, dynamic>) {
+        return Position.fromJson(pos);
+      }
+      if (pos is Map) {
+        return Position.fromJson(Map<String, dynamic>.from(pos));
+      }
+      return null;
+    } catch (e) {
+      print('Error parsing Position: $e');
+      return null;
+    }
+  }
+
+  static Company? _parseCompany(dynamic comp) {
+    try {
+      if (comp == null) return null;
+      if (comp is Map<String, dynamic>) {
+        return Company.fromJson(comp);
+      }
+      if (comp is Map) {
+        return Company.fromJson(Map<String, dynamic>.from(comp));
+      }
+      return null;
+    } catch (e) {
+      print('Error parsing Company: $e');
+      return null;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -131,11 +190,25 @@ class Department {
   });
 
   factory Department.fromJson(Map<String, dynamic> json) {
-    return Department(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      description: json['description'],
-    );
+    try {
+      return Department(
+        id: _parseInt(json['id']),
+        name: json['name']?.toString() ?? '',
+        description: json['description']?.toString(),
+      );
+    } catch (e) {
+      print('Error parsing Department: $e');
+      return Department(id: 0, name: 'Unknown');
+    }
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+    return 0;
   }
 
   Map<String, dynamic> toJson() {
@@ -161,12 +234,26 @@ class Position {
   });
 
   factory Position.fromJson(Map<String, dynamic> json) {
-    return Position(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      description: json['description'],
-      level: json['level'] ?? 1,
-    );
+    try {
+      return Position(
+        id: _parseInt(json['id']),
+        name: json['name']?.toString() ?? '',
+        description: json['description']?.toString(),
+        level: _parseInt(json['level']) == 0 ? 1 : _parseInt(json['level']),
+      );
+    } catch (e) {
+      print('Error parsing Position: $e');
+      return Position(id: 0, name: 'Unknown', level: 1);
+    }
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+    return 0;
   }
 
   Map<String, dynamic> toJson() {
@@ -197,14 +284,28 @@ class Company {
   });
 
   factory Company.fromJson(Map<String, dynamic> json) {
-    return Company(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'],
-      address: json['address'],
-      logo: json['logo'],
-    );
+    try {
+      return Company(
+        id: _parseInt(json['id']),
+        name: json['name']?.toString() ?? '',
+        email: json['email']?.toString() ?? '',
+        phone: json['phone']?.toString(),
+        address: json['address']?.toString(),
+        logo: json['logo']?.toString(),
+      );
+    } catch (e) {
+      print('Error parsing Company: $e');
+      return Company(id: 0, name: 'Unknown', email: '');
+    }
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+    return 0;
   }
 
   Map<String, dynamic> toJson() {

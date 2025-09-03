@@ -1,7 +1,7 @@
 # 📋 CATATAN LENGKAP UNTUK MELANJUTKAN DEVELOPMENT
 ## Tanggal: 02 September 2025
 
----
+C:\xampp\php\php.exe artisan serve --port=8000
 
 ## 🎯 STATUS PROJECT SAAT INI
 

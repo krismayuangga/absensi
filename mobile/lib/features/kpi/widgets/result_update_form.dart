@@ -62,42 +62,67 @@ class _ResultUpdateFormState extends State<ResultUpdateForm> {
     if (!_formKey.currentState!.validate()) return;
 
     final kpiProvider = Provider.of<KPIProvider>(context, listen: false);
-
-    // Safe parse visitId
     final visitId = _safeParseInt(widget.visit['id']);
-    if (visitId <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ID kunjungan tidak valid'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    final clientName = widget.visit['client_name'] ?? '';
 
-    final success = await kpiProvider.updateVisitResult(
-      visitId: visitId,
-      status: _selectedResult,
-      potentialValue: _potentialValueController.text.isNotEmpty
-          ? double.tryParse(_potentialValueController.text)
-          : null,
-      nextAction: _selectedNextAction,
-      endTime: DateTime.now(), // Set end time when updating
-    );
+    bool success;
 
-    if (mounted) {
-      if (success) {
-        Navigator.of(context).pop(true); // Return true to indicate success
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Hasil kunjungan berhasil diupdate!'),
-            backgroundColor: Colors.green,
-          ),
+    try {
+      if (visitId <= 0) {
+        // Untuk prospek baru, buat visit baru terlebih dahulu
+        success = await kpiProvider.logVisit(
+          clientName: clientName,
+          visitPurpose: 'Follow Up Prospek',
+          latitude: 0.0,
+          longitude: 0.0,
+          address: 'Alamat tidak tersedia',
+          notes: _resultNotesController.text.isNotEmpty
+              ? 'Status: $_selectedResult\nCatatan: ${_resultNotesController.text}'
+              : 'Status: $_selectedResult',
+          photo: null,
         );
       } else {
+        // Update visit yang sudah ada
+        success = await kpiProvider.updateVisitResult(
+          visitId: visitId,
+          status: _selectedResult,
+          potentialValue: _potentialValueController.text.isNotEmpty
+              ? double.tryParse(_potentialValueController.text)
+              : null,
+          nextAction: _selectedNextAction,
+          endTime: DateTime.now(),
+        );
+      }
+
+      if (mounted) {
+        if (success) {
+          Navigator.of(context).pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                visitId <= 0
+                    ? 'Prospek berhasil dibuat!'
+                    : 'Hasil kunjungan berhasil diupdate!',
+              ),
+              backgroundColor: const Color(0xFF4A9B8E),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                kpiProvider.errorMessage ?? 'Gagal menyimpan data',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(kpiProvider.errorMessage ?? 'Gagal mengupdate hasil'),
+            content: Text('Terjadi kesalahan: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -138,7 +163,7 @@ class _ResultUpdateFormState extends State<ResultUpdateForm> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.purple,
+        backgroundColor: const Color(0xFF4A9B8E),
         elevation: 0,
         title: Text(
           'Update Hasil Kunjungan',
@@ -385,9 +410,7 @@ class _ResultUpdateFormState extends State<ResultUpdateForm> {
                     ),
                     maxLines: 3,
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Catatan hasil wajib diisi';
-                      }
+                      // Catatan tidak wajib, bisa kosong
                       return null;
                     },
                   ),
@@ -428,7 +451,7 @@ class _ResultUpdateFormState extends State<ResultUpdateForm> {
                     child: ElevatedButton(
                       onPressed: kpiProvider.isSubmitting ? null : _submitForm,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple.shade600,
+                        backgroundColor: const Color(0xFF4A9B8E),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.r),

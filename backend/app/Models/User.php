@@ -24,12 +24,18 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'employee_id',
         'phone',
-        'role',
+        'birth_date',
         'position',
         'department',
-        'company_id',
+        'join_date',
+        'profile_picture',
+        'role',
+        'address',
+        'gender',
         'is_active',
+        'last_login',
         'avatar',
+        'company_id',
     ];
 
     /**
@@ -53,6 +59,9 @@ class User extends Authenticatable implements JWTSubject
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'birth_date' => 'date',
+            'join_date' => 'date',
+            'last_login' => 'datetime',
         ];
     }
 

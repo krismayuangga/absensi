@@ -16,6 +16,19 @@ class MainNavigation extends StatefulWidget {
   State<MainNavigation> createState() => _MainNavigationState();
 }
 
+// Global navigation controller
+class NavigationController {
+  static _MainNavigationState? _navigationState;
+
+  static void register(_MainNavigationState state) {
+    _navigationState = state;
+  }
+
+  static void changeTab(int index) {
+    _navigationState?.changeTab(index);
+  }
+}
+
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
@@ -26,6 +39,22 @@ class _MainNavigationState extends State<MainNavigation> {
     const InfoMainScreen(),
     const ProfileMainScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Register this state with the navigation controller
+    NavigationController.register(this);
+  }
+
+  // Method to change tab from external widgets
+  void changeTab(int index) {
+    if (index >= 0 && index < _screens.length) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
