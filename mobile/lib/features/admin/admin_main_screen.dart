@@ -74,7 +74,7 @@ class _AdminMainScreenState extends State<AdminMainScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text(
           'Admin Dashboard',
@@ -83,7 +83,7 @@ class _AdminMainScreenState extends State<AdminMainScreen>
             color: Colors.white,
           ),
         ),
-        backgroundColor: AppTheme.primary,
+        backgroundColor: AppTheme.primaryColor,
         elevation: 0,
         actions: [
           Consumer<AuthProvider>(
@@ -100,7 +100,7 @@ class _AdminMainScreenState extends State<AdminMainScreen>
                       child: Text(
                         user?.name?.substring(0, 1).toUpperCase() ?? 'A',
                         style: TextStyle(
-                          color: AppTheme.primary,
+                          color: AppTheme.primaryColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -321,10 +321,10 @@ class _AdminMainScreenState extends State<AdminMainScreen>
                             return ListTile(
                               leading: CircleAvatar(
                                 backgroundColor:
-                                    AppTheme.primary.withOpacity(0.1),
+                                    AppTheme.primaryColor.withOpacity(0.1),
                                 child: Icon(
                                   Icons.access_time,
-                                  color: AppTheme.primary,
+                                  color: AppTheme.primaryColor,
                                   size: 20,
                                 ),
                               ),

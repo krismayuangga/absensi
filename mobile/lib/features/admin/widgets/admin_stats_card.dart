@@ -1,35 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AdminStatsCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
   final Color color;
-  final Map<String, dynamic>? trend;
+  final String subtitle;
 
   const AdminStatsCard({
-    super.key,
+    Key? key,
     required this.title,
     required this.value,
     required this.icon,
     required this.color,
-    this.trend,
-  });
+    required this.subtitle,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -37,75 +36,45 @@ class AdminStatsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: EdgeInsets.all(8.w),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8.r),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon,
                   color: color,
-                  size: 20.w,
+                  size: 24,
                 ),
               ),
-              if (trend != null) _buildTrendIndicator(),
+              const Spacer(),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
             ],
           ),
-          SizedBox(height: 12.h),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          SizedBox(height: 4.h),
+          const SizedBox(height: 12),
           Text(
             title,
-            style: GoogleFonts.inter(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTrendIndicator() {
-    if (trend == null) return const SizedBox.shrink();
-
-    final isPositive = (trend!['change'] ?? 0.0) >= 0;
-    final changeValue = trend!['change']?.toString() ?? '0';
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: isPositive
-            ? Colors.green.withOpacity(0.1)
-            : Colors.red.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isPositive ? Icons.trending_up : Icons.trending_down,
-            size: 12.w,
-            color: isPositive ? Colors.green : Colors.red,
-          ),
-          SizedBox(width: 2.w),
+          const SizedBox(height: 4),
           Text(
-            '${changeValue}%',
-            style: GoogleFonts.inter(
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w600,
-              color: isPositive ? Colors.green : Colors.red,
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
             ),
           ),
         ],

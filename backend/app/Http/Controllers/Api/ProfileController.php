@@ -71,6 +71,9 @@ class ProfileController extends Controller
                 ], 401);
             }
 
+            // Debug: Log received data
+            \Log::info('Profile update request data:', $request->all());
+
             $validator = Validator::make($request->all(), [
                 'name' => 'sometimes|string|max:255',
                 'phone' => 'sometimes|string|max:20',
@@ -81,6 +84,7 @@ class ProfileController extends Controller
             ]);
 
             if ($validator->fails()) {
+                \Log::error('Validation failed:', $validator->errors()->toArray());
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
@@ -91,6 +95,9 @@ class ProfileController extends Controller
             $updateData = $request->only([
                 'name', 'phone', 'birth_date', 'address', 'gender'
             ]);
+
+            // Debug: Log update data before processing
+            \Log::info('Update data to be saved:', $updateData);
 
             // Handle profile picture upload
             if ($request->hasFile('profile_picture')) {
@@ -106,6 +113,9 @@ class ProfileController extends Controller
             }
 
             $user->update($updateData);
+            
+            // Debug: Log after update
+            \Log::info('User after update:', $user->fresh()->toArray());
 
             return response()->json([
                 'success' => true,

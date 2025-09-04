@@ -8,11 +8,11 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\Api\KpiController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\AdminDashboardController;
+use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\DebugKpiController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\AdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -124,9 +124,6 @@ Route::prefix('v1/auth')->group(function () {
     Route::post('refresh', [AuthController::class, 'refresh']);
 });
 
-// Add login route name for auth middleware
-Route::post('login', [AuthController::class, 'login'])->name('login');
-
 // Protected routes (require authentication)
 Route::middleware('auth:api')->prefix('v1')->group(function () {
     
@@ -206,21 +203,22 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
 
         // Admin Dashboard routes (for admin role only)
         Route::prefix('admin')->middleware('role:admin')->group(function () {
-            // New admin routes for Flutter frontend
-            Route::get('dashboard/stats', [AdminController::class, 'getDashboardStats']);
-            Route::get('employees', [AdminController::class, 'getEmployees']);
-            Route::post('employees', [AdminController::class, 'createEmployee']);
-            Route::put('employees/{id}', [AdminController::class, 'updateEmployee']);
-            Route::delete('employees/{id}', [AdminController::class, 'deleteEmployee']);
-            Route::get('attendance/today', [AdminController::class, 'getTodayAttendance']);
-            Route::get('kpi/reports', [AdminController::class, 'getKpiReports']);
-            
-            // Existing admin routes
             Route::get('kpi/overview', [AdminDashboardController::class, 'getKpiOverview']);
             Route::get('kpi/users', [AdminDashboardController::class, 'getAllUsersKpi']);
             Route::get('kpi/users/{userId}/visits', [AdminDashboardController::class, 'getUserVisits']);
             Route::get('kpi/top-performers', [AdminDashboardController::class, 'getTopPerformers']);
             Route::get('kpi/export', [AdminDashboardController::class, 'exportKpiData']);
+            
+            // Admin management routes
+            Route::get('dashboard/stats', [AdminController::class, 'getDashboardStats']);
+            Route::get('employees', [AdminController::class, 'getEmployees']);
+            Route::post('employees', [AdminController::class, 'createEmployee']);
+            Route::put('employees/{id}', [AdminController::class, 'updateEmployee']);
+            Route::delete('employees/{id}', [AdminController::class, 'deleteEmployee']);
+            Route::get('attendance', [AdminController::class, 'getAttendanceRecords']);
+            Route::get('leaves', [AdminController::class, 'getLeaveRequests']);
+            Route::put('leaves/{id}/status', [AdminController::class, 'updateLeaveStatus']);
+            Route::get('master-data', [AdminController::class, 'getMasterData']);
             
             // Admin Info & Media management
             Route::prefix('info-media')->group(function () {

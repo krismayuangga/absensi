@@ -67,29 +67,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final DateTime date = DateTime.parse(dateString);
-      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     } catch (e) {
       return dateString; // Return original string if parsing fails
     }
-  }
-
-  String? _formatDateForAPI(String? dateString) {
-    if (dateString == null || dateString.isEmpty) return null;
-
-    try {
-      // Parse DD/MM/YYYY format to DateTime
-      final parts = dateString.split('/');
-      if (parts.length == 3) {
-        final day = int.parse(parts[0]);
-        final month = int.parse(parts[1]);
-        final year = int.parse(parts[2]);
-        final date = DateTime(year, month, day);
-        return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      }
-    } catch (e) {
-      print('Error formatting date: $e');
-    }
-    return dateString;
   }
 
   @override
@@ -160,7 +141,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
         birthDate: _birthDateController.text.trim().isNotEmpty
-            ? _formatDateForAPI(_birthDateController.text.trim())
+            ? _birthDateController.text.trim()
             : null,
         address: _addressController.text.trim(),
         profileImage: _profileImage,

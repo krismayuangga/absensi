@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/profile_provider.dart';
+import '../admin/admin_main_screen.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/notification_settings_screen.dart';
@@ -207,6 +208,21 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                 ]),
 
                 SizedBox(height: 20.h),
+
+                // Admin Panel Section (Only for Admin Users)
+                if (profileData?['role']?.toLowerCase() == 'admin') ...[
+                  _buildSection('Panel Admin', [
+                    _buildMenuButton('Dashboard Admin', Icons.dashboard, () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AdminMainScreen(),
+                        ),
+                      );
+                    }),
+                  ]),
+                  SizedBox(height: 20.h),
+                ],
 
                 // Account Settings
                 _buildSection('Pengaturan Akun', [
