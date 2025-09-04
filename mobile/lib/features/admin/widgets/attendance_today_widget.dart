@@ -12,7 +12,7 @@ class AttendanceTodayWidget extends StatelessWidget {
         final stats = adminProvider.dashboardStats;
         final todayAttendance = stats?['today_attendance'] ?? 0;
         final totalEmployees = stats?['total_employees'] ?? 0;
-        final percentage = stats?['attendance_percentage'] ?? 0;
+        final percentage = (stats?['attendance_percentage']?.toDouble() ?? 0.0);
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -51,7 +51,7 @@ class AttendanceTodayWidget extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '$percentage%',
+                      '${percentage.toStringAsFixed(1)}%',
                       style: TextStyle(
                         color: _getPercentageColor(percentage),
                         fontWeight: FontWeight.bold,
