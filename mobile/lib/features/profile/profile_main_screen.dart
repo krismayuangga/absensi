@@ -172,25 +172,33 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                 // Personal Information
                 _buildSection('Informasi Pribadi', [
                   _buildInfoItem(
-                      'Email', profileData?['email'] ?? 'email@company.com', Icons.email),
-                  _buildInfoItem('Nomor HP', profileData?['phone'] ?? '-', Icons.phone),
+                      'Email',
+                      profileData?['email'] ?? 'email@company.com',
+                      Icons.email),
+                  _buildInfoItem(
+                      'Nomor HP', profileData?['phone'] ?? '-', Icons.phone),
                   _buildInfoItem('Alamat', profileData?['address'] ?? '-',
                       Icons.location_on),
-                  _buildInfoItem(
-                      'Tanggal Lahir', _formatDate(profileData?['birth_date']), Icons.cake),
+                  _buildInfoItem('Tanggal Lahir',
+                      _formatDate(profileData?['birth_date']), Icons.cake),
                 ]),
 
                 SizedBox(height: 20.h),
 
                 // Work Information
                 _buildSection('Informasi Kerja', [
-                  _buildInfoItem('Posisi',
-                      profileData?['position'] ?? 'Software Developer', Icons.work),
+                  _buildInfoItem(
+                      'Posisi',
+                      profileData?['position'] ?? 'Software Developer',
+                      Icons.work),
                   _buildInfoItem(
                       'Departemen',
                       profileData?['department'] ?? 'IT Department',
                       Icons.business),
-                  _buildInfoItem('Tanggal Bergabung', _formatDate(profileData?['join_date']) ?? '1 Januari 2023',
+                  _buildInfoItem(
+                      'Tanggal Bergabung',
+                      _formatDate(profileData?['join_date']) ??
+                          '1 Januari 2023',
                       Icons.calendar_today),
                   _buildInfoItem('Status', 'Karyawan Tetap', Icons.badge),
                 ]),
@@ -504,8 +512,19 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
     try {
       final date = DateTime.parse(dateStr);
       final months = [
-        '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        '',
+        'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember'
       ];
       return '${date.day} ${months[date.month]} ${date.year}';
     } catch (e) {
