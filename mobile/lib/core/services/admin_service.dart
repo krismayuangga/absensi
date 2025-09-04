@@ -3,7 +3,7 @@ import '../config/app_config.dart';
 
 class AdminService {
   final Dio _dio = Dio();
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
+  static const String baseUrl = 'http://10.0.2.2:8000/api/v1';
 
   AdminService() {
     _dio.options.baseUrl = baseUrl;

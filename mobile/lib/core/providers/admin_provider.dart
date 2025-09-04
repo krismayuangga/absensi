@@ -68,9 +68,19 @@ class AdminProvider extends ChangeNotifier {
       final result = await _adminService.getDashboardStats();
 
       if (result['success'] == true) {
-        _dashboardStats = result['data']['stats'];
-        _recentActivities = List<Map<String, dynamic>>.from(
-            result['data']['recent_activities'] ?? []);
+        _dashboardStats = result['data']?['stats'];
+
+        // Safe parsing for recent activities
+        final activitiesData = result['data']?['recent_activities'];
+        _recentActivities = [];
+        if (activitiesData is List) {
+          for (var item in activitiesData) {
+            if (item is Map<String, dynamic>) {
+              _recentActivities.add(item);
+            }
+          }
+        }
+
         _errorMessage = null;
       } else {
         _errorMessage = result['message'] ?? 'Failed to load dashboard stats';
@@ -102,8 +112,17 @@ class AdminProvider extends ChangeNotifier {
 
       if (result['success'] == true) {
         final data = result['data'];
-        final newEmployees =
-            List<Map<String, dynamic>>.from(data['data'] ?? []);
+
+        // Safe parsing for employees data
+        final employeesData = data?['data'];
+        List<Map<String, dynamic>> newEmployees = [];
+        if (employeesData is List) {
+          for (var item in employeesData) {
+            if (item is Map<String, dynamic>) {
+              newEmployees.add(item);
+            }
+          }
+        }
 
         if (refresh) {
           _employees = newEmployees;
@@ -111,8 +130,8 @@ class AdminProvider extends ChangeNotifier {
           _employees.addAll(newEmployees);
         }
 
-        _currentEmployeePage = data['current_page'] ?? 1;
-        _totalEmployeePages = data['last_page'] ?? 1;
+        _currentEmployeePage = data?['current_page'] ?? 1;
+        _totalEmployeePages = data?['last_page'] ?? 1;
         _hasMoreEmployees = _currentEmployeePage < _totalEmployeePages;
 
         if (_hasMoreEmployees) {
@@ -341,10 +360,39 @@ class AdminProvider extends ChangeNotifier {
 
       if (result['success'] == true) {
         final data = result['data'];
-        _companies = List<Map<String, dynamic>>.from(data['companies'] ?? []);
-        _departments =
-            List<Map<String, dynamic>>.from(data['departments'] ?? []);
-        _positions = List<Map<String, dynamic>>.from(data['positions'] ?? []);
+
+        // Safe parsing for companies
+        _companies = [];
+        final companiesData = data?['companies'];
+        if (companiesData is List) {
+          for (var item in companiesData) {
+            if (item is Map<String, dynamic>) {
+              _companies.add(item);
+            }
+          }
+        }
+
+        // Safe parsing for departments
+        _departments = [];
+        final departmentsData = data?['departments'];
+        if (departmentsData is List) {
+          for (var item in departmentsData) {
+            if (item is Map<String, dynamic>) {
+              _departments.add(item);
+            }
+          }
+        }
+
+        // Safe parsing for positions
+        _positions = [];
+        final positionsData = data?['positions'];
+        if (positionsData is List) {
+          for (var item in positionsData) {
+            if (item is Map<String, dynamic>) {
+              _positions.add(item);
+            }
+          }
+        }
 
         _errorMessage = null;
         notifyListeners();
