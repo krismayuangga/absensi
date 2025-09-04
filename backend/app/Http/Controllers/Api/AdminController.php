@@ -20,7 +20,7 @@ class AdminController extends Controller
     public function __construct()
     {
         $this->middleware('auth:api');
-        $this->middleware('admin');
+        // Role middleware sudah diterapkan di routes, tidak perlu di controller
     }
 
     /**
