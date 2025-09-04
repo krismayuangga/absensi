@@ -17,70 +17,38 @@ use Carbon\Carbon;
 
 class AdminController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:api');
-        // Role middleware sudah diterapkan di routes, tidak perlu di controller
-    }
-
     /**
      * Get dashboard statistics
      */
     public function getDashboardStats()
     {
         try {
-            $today = Carbon::today();
-            $thisMonth = Carbon::now()->startOfMonth();
+            // Simple test data first
+            $stats = [
+                'total_employees' => 10,
+                'today_attendance' => 8,
+                'attendance_percentage' => 80.0,
+                'pending_leaves' => 2,
+                'monthly_average' => 7.5,
+            ];
             
-            // Total employees
-            $totalEmployees = User::where('role', 'employee')->count();
-            
-            // Today's attendance
-            $todayAttendance = Attendance::whereDate('date', $today)->count();
-            $attendancePercentage = $totalEmployees > 0 ? round(($todayAttendance / $totalEmployees) * 100, 1) : 0;
-            
-            // Pending leaves
-            $pendingLeaves = Leave::where('status', 'pending')->count();
-            
-            // This month's attendance average
-            $monthlyAttendance = Attendance::whereMonth('date', $thisMonth->month)
-                ->whereYear('date', $thisMonth->year)
-                ->selectRaw('DATE(date) as attendance_date, COUNT(DISTINCT user_id) as unique_attendees')
-                ->groupBy('attendance_date')
-                ->get();
-                
-            $monthlyAverage = $monthlyAttendance->count() > 0 
-                ? round($monthlyAttendance->avg('unique_attendees'), 1) 
-                : 0;
-
-            // Recent activities (last 10 attendance records)
-            $recentActivities = Attendance::with(['user:id,name,employee_code'])
-                ->latest('clock_in')
-                ->limit(10)
-                ->get()
-                ->map(function ($attendance) {
-                    return [
-                        'id' => $attendance->id,
-                        'employee_name' => $attendance->user->name,
-                        'employee_code' => $attendance->user->employee_code,
-                        'action' => 'clock_in',
-                        'time' => $attendance->clock_in,
-                        'date' => $attendance->date,
-                        'status' => $attendance->status,
-                    ];
-                });
+            $activities = [
+                [
+                    'id' => 1,
+                    'employee_name' => 'Test Employee',
+                    'employee_code' => 'EMP001',
+                    'action' => 'clock_in',
+                    'time' => '2025-09-04T09:00:00Z',
+                    'date' => '2025-09-04',
+                    'status' => 'present',
+                ]
+            ];
 
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'stats' => [
-                        'total_employees' => $totalEmployees,
-                        'today_attendance' => $todayAttendance,
-                        'attendance_percentage' => $attendancePercentage,
-                        'pending_leaves' => $pendingLeaves,
-                        'monthly_average' => $monthlyAverage,
-                    ],
-                    'recent_activities' => $recentActivities,
+                    'stats' => $stats,
+                    'recent_activities' => $activities,
                 ],
             ]);
 
@@ -98,21 +66,41 @@ class AdminController extends Controller
     public function getEmployees(Request $request)
     {
         try {
-            $perPage = $request->get('per_page', 15);
-            $search = $request->get('search');
-            
-            $query = User::where('role', 'employee')
-                ->with(['company:id,name', 'department:id,name', 'position:id,name']);
-                
-            if ($search) {
-                $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('employee_code', 'like', "%{$search}%");
-                });
-            }
-            
-            $employees = $query->latest()->paginate($perPage);
+            // Simple test data first
+            $employees = [
+                'data' => [
+                    [
+                        'id' => 1,
+                        'name' => 'Test Employee 1',
+                        'email' => 'employee1@test.com',
+                        'employee_code' => 'EMP001',
+                        'phone' => '081234567890',
+                        'hire_date' => '2024-01-15',
+                        'status' => 'active',
+                        'salary' => 5000000,
+                        'company' => ['id' => 1, 'name' => 'Main Company'],
+                        'department' => ['id' => 1, 'name' => 'IT Department'],
+                        'position' => ['id' => 1, 'name' => 'Developer'],
+                    ],
+                    [
+                        'id' => 2,
+                        'name' => 'Test Employee 2',
+                        'email' => 'employee2@test.com',
+                        'employee_code' => 'EMP002',
+                        'phone' => '081234567891',
+                        'hire_date' => '2024-02-10',
+                        'status' => 'active',
+                        'salary' => 4500000,
+                        'company' => ['id' => 1, 'name' => 'Main Company'],
+                        'department' => ['id' => 2, 'name' => 'HR Department'],
+                        'position' => ['id' => 2, 'name' => 'Manager'],
+                    ],
+                ],
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => 15,
+                'total' => 2,
+            ];
             
             return response()->json([
                 'success' => true,
@@ -382,9 +370,23 @@ class AdminController extends Controller
     public function getMasterData()
     {
         try {
-            $companies = Company::select('id', 'name')->where('is_active', true)->get();
-            $departments = Department::select('id', 'name')->where('is_active', true)->get();
-            $positions = Position::select('id', 'name')->where('is_active', true)->get();
+            // Simple test data first
+            $companies = [
+                ['id' => 1, 'name' => 'Main Company'],
+                ['id' => 2, 'name' => 'Branch Office'],
+            ];
+            
+            $departments = [
+                ['id' => 1, 'name' => 'IT Department'],
+                ['id' => 2, 'name' => 'HR Department'],
+                ['id' => 3, 'name' => 'Finance Department'],
+            ];
+            
+            $positions = [
+                ['id' => 1, 'name' => 'Manager'],
+                ['id' => 2, 'name' => 'Developer'],
+                ['id' => 3, 'name' => 'Staff'],
+            ];
 
             return response()->json([
                 'success' => true,
