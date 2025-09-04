@@ -53,9 +53,9 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
           ),
         ],
       ),
-      body: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          final user = authProvider.user;
+      body: Consumer<ProfileProvider>(
+        builder: (context, profileProvider, child) {
+          final profileData = profileProvider.userProfile?['data'];
 
           return SingleChildScrollView(
             padding: EdgeInsets.all(16.w),
@@ -97,7 +97,7 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                       ),
                       SizedBox(height: 16.h),
                       Text(
-                        user?.name ?? 'User Name',
+                        profileData?['name'] ?? 'Loading...',
                         style: GoogleFonts.poppins(
                           fontSize: 24.sp,
                           fontWeight: FontWeight.w700,
@@ -113,7 +113,7 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                           borderRadius: BorderRadius.circular(20.r),
                         ),
                         child: Text(
-                          '${user?.employeeId} • ${_getRoleInIndonesian(user?.role)}',
+                          '${profileData?['employee_id'] ?? 'EMP001'} • ${_getRoleInIndonesian(profileData?['role'])}',
                           style: GoogleFonts.inter(
                             fontSize: 12.sp,
                             color: Colors.white,
@@ -124,13 +124,18 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                       SizedBox(height: 12.h),
                       // Edit Profile Button
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
+                        onPressed: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => const EditProfileScreen(),
                             ),
                           );
+                          // Refresh profile data setelah kembali dari edit
+                          if (result == true || result == null) {
+                            Provider.of<ProfileProvider>(context, listen: false)
+                                .loadUserProfile();
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
@@ -167,12 +172,12 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                 // Personal Information
                 _buildSection('Informasi Pribadi', [
                   _buildInfoItem(
-                      'Email', user?.email ?? 'email@company.com', Icons.email),
-                  _buildInfoItem('Nomor HP', '+62 812-3456-7890', Icons.phone),
-                  _buildInfoItem('Alamat', 'Jl. Sudirman No. 123, Jakarta',
+                      'Email', profileData?['email'] ?? 'email@company.com', Icons.email),
+                  _buildInfoItem('Nomor HP', profileData?['phone'] ?? '-', Icons.phone),
+                  _buildInfoItem('Alamat', profileData?['address'] ?? '-',
                       Icons.location_on),
                   _buildInfoItem(
-                      'Tanggal Lahir', '15 Januari 1990', Icons.cake),
+                      'Tanggal Lahir', _formatDate(profileData?['birth_date']), Icons.cake),
                 ]),
 
                 SizedBox(height: 20.h),
@@ -180,12 +185,12 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                 // Work Information
                 _buildSection('Informasi Kerja', [
                   _buildInfoItem('Posisi',
-                      user?.position?.name ?? 'Software Developer', Icons.work),
+                      profileData?['position'] ?? 'Software Developer', Icons.work),
                   _buildInfoItem(
                       'Departemen',
-                      user?.department?.name ?? 'IT Department',
+                      profileData?['department'] ?? 'IT Department',
                       Icons.business),
-                  _buildInfoItem('Tanggal Bergabung', '1 Januari 2023',
+                  _buildInfoItem('Tanggal Bergabung', _formatDate(profileData?['join_date']) ?? '1 Januari 2023',
                       Icons.calendar_today),
                   _buildInfoItem('Status', 'Karyawan Tetap', Icons.badge),
                 ]),
@@ -492,6 +497,20 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Bantuan & FAQ akan segera tersedia!')),
     );
+  }
+
+  String? _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+    try {
+      final date = DateTime.parse(dateStr);
+      final months = [
+        '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      ];
+      return '${date.day} ${months[date.month]} ${date.year}';
+    } catch (e) {
+      return dateStr;
+    }
   }
 
   void _showPrivacyPolicy() {
