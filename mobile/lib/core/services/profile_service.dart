@@ -19,9 +19,12 @@ class ProfileService {
       final token = authBox.get(AppConfig.tokenKey);
       if (token != null) {
         _dio.options.headers['Authorization'] = 'Bearer $token';
+        print('🔑 Using token: ${token.substring(0, 50)}...');
+      } else {
+        print('❌ No token found in storage');
       }
     } catch (e) {
-      print('Auth token not available: $e');
+      print('❌ Auth token error: $e');
     }
   }
 
@@ -72,18 +75,22 @@ class ProfileService {
       print('🔄 Updating profile...');
       _addAuthToken();
 
-      FormData formData = FormData();
-
-      // Add profile data
-      if (name != null) formData.fields.add(MapEntry('name', name));
-      if (phone != null) formData.fields.add(MapEntry('phone', phone));
-      if (birthDate != null)
-        formData.fields.add(MapEntry('birth_date', birthDate));
-      if (address != null) formData.fields.add(MapEntry('address', address));
-      if (gender != null) formData.fields.add(MapEntry('gender', gender));
-
-      // Add profile image if provided
+      // If there's a profile image, use FormData, otherwise use JSON
       if (profileImage != null) {
+        FormData formData = FormData();
+
+        // Add profile data
+        if (name != null) formData.fields.add(MapEntry('name', name));
+        if (phone != null) formData.fields.add(MapEntry('phone', phone));
+        if (birthDate != null)
+          formData.fields.add(MapEntry('birth_date', birthDate));
+        if (address != null) formData.fields.add(MapEntry('address', address));
+        if (gender != null) formData.fields.add(MapEntry('gender', gender));
+
+        print(
+            '📤 Sending FormData fields: ${formData.fields.map((e) => '${e.key}: ${e.value}').join(', ')}');
+
+        // Add profile image
         String fileName = profileImage.path.split('/').last;
         formData.files.add(
           MapEntry(
@@ -94,20 +101,50 @@ class ProfileService {
             ),
           ),
         );
+
+        final response = await _dio.put(
+          '/v1/profile',
+          data: formData,
+          options: Options(
+            headers: {
+              'Authorization': _dio.options.headers['Authorization'],
+              // Don't set Content-Type, let Dio handle it for FormData
+            },
+          ),
+        );
+
+        print('✅ Update response: ${response.statusCode}');
+        print('📊 Update result: ${response.data}');
+
+        if (response.statusCode == 200) {
+          return response.data;
+        }
+      } else {
+        // Use JSON for profile data without image
+        Map<String, dynamic> updateData = {};
+
+        if (name != null) updateData['name'] = name;
+        if (phone != null) updateData['phone'] = phone;
+        if (birthDate != null) updateData['birth_date'] = birthDate;
+        if (address != null) updateData['address'] = address;
+        if (gender != null) updateData['gender'] = gender;
+
+        print('📤 Sending JSON data: $updateData');
+
+        final response = await _dio.put('/v1/profile', data: updateData);
+
+        print('✅ Update response: ${response.statusCode}');
+        print('📊 Update result: ${response.data}');
+
+        if (response.statusCode == 200) {
+          return response.data;
+        }
       }
 
-      final response = await _dio.put('/profile', data: formData);
-
-      print('✅ Update response: ${response.statusCode}');
-      print('📊 Update result: ${response.data}');
-
-      if (response.statusCode == 200) {
-        return response.data;
-      }
-
+      // If we reach here, something went wrong
       return {
         'success': false,
-        'message': response.data['message'] ?? 'Gagal memperbarui profil',
+        'message': 'Gagal memperbarui profil',
       };
     } catch (e) {
       print('❌ Error updating profile: $e');

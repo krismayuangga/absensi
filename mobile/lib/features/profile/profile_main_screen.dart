@@ -53,9 +53,13 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
           ),
         ],
       ),
-      body: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          final user = authProvider.user;
+      body: Consumer<ProfileProvider>(
+        builder: (context, profileProvider, child) {
+          if (profileProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final profileData = profileProvider.userProfile?['data'];
 
           return SingleChildScrollView(
             padding: EdgeInsets.all(16.w),
@@ -97,7 +101,7 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                       ),
                       SizedBox(height: 16.h),
                       Text(
-                        user?.name ?? 'User Name',
+                        profileData?['name'] ?? 'User Name',
                         style: GoogleFonts.poppins(
                           fontSize: 24.sp,
                           fontWeight: FontWeight.w700,
@@ -113,7 +117,7 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                           borderRadius: BorderRadius.circular(20.r),
                         ),
                         child: Text(
-                          '${user?.employeeId} • ${_getRoleInIndonesian(user?.role)}',
+                          '${profileData?['employee_id'] ?? ''} • ${_getRoleInIndonesian(profileData?['role'])}',
                           style: GoogleFonts.inter(
                             fontSize: 12.sp,
                             color: Colors.white,
@@ -167,27 +171,39 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                 // Personal Information
                 _buildSection('Informasi Pribadi', [
                   _buildInfoItem(
-                      'Email', user?.email ?? 'email@company.com', Icons.email),
-                  _buildInfoItem('Nomor HP', '+62 812-3456-7890', Icons.phone),
-                  _buildInfoItem('Alamat', 'Jl. Sudirman No. 123, Jakarta',
+                      'Email',
+                      profileData?['email'] ?? 'email@company.com',
+                      Icons.email),
+                  _buildInfoItem(
+                      'Nomor HP', profileData?['phone'] ?? '-', Icons.phone),
+                  _buildInfoItem('Alamat', profileData?['address'] ?? '-',
                       Icons.location_on),
                   _buildInfoItem(
-                      'Tanggal Lahir', '15 Januari 1990', Icons.cake),
+                      'Tanggal Lahir',
+                      _formatDate(profileData?['birth_date']) ?? '-',
+                      Icons.cake),
                 ]),
 
                 SizedBox(height: 20.h),
 
                 // Work Information
                 _buildSection('Informasi Kerja', [
-                  _buildInfoItem('Posisi',
-                      user?.position?.name ?? 'Software Developer', Icons.work),
+                  _buildInfoItem(
+                      'Posisi',
+                      profileData?['position'] ?? 'Software Developer',
+                      Icons.work),
                   _buildInfoItem(
                       'Departemen',
-                      user?.department?.name ?? 'IT Department',
+                      profileData?['department'] ?? 'IT Department',
                       Icons.business),
-                  _buildInfoItem('Tanggal Bergabung', '1 Januari 2023',
+                  _buildInfoItem(
+                      'Tanggal Bergabung',
+                      _formatDate(profileData?['join_date']) ?? '-',
                       Icons.calendar_today),
-                  _buildInfoItem('Status', 'Karyawan Tetap', Icons.badge),
+                  _buildInfoItem(
+                      'Status',
+                      profileData?['is_active'] == true ? 'Aktif' : 'Non-Aktif',
+                      Icons.badge),
                 ]),
 
                 SizedBox(height: 20.h),
@@ -423,6 +439,32 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
         return 'SDM';
       default:
         return role?.toUpperCase() ?? 'KARYAWAN';
+    }
+  }
+
+  String? _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return null;
+
+    try {
+      final DateTime date = DateTime.parse(dateString);
+      final List<String> months = [
+        'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember'
+      ];
+
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return dateString; // Return original string if parsing fails
     }
   }
 

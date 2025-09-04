@@ -31,20 +31,45 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    // Load user profile first, then populate fields
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profileProvider =
+          Provider.of<ProfileProvider>(context, listen: false);
+      if (profileProvider.userProfile == null) {
+        profileProvider.loadUserProfile().then((_) {
+          _loadUserData();
+        });
+      } else {
+        _loadUserData();
+      }
+    });
   }
 
   void _loadUserData() {
     final profileProvider =
         Provider.of<ProfileProvider>(context, listen: false);
-    final user = profileProvider.userProfile;
+    final user = profileProvider.userProfile?['data'];
 
     if (user != null) {
-      _nameController.text = user['name'] ?? '';
-      _emailController.text = user['email'] ?? '';
-      _phoneController.text = user['phone'] ?? '';
-      _addressController.text = user['address'] ?? '';
-      _birthDateController.text = user['birth_date'] ?? '';
+      setState(() {
+        _nameController.text = user['name'] ?? '';
+        _emailController.text = user['email'] ?? '';
+        _phoneController.text = user['phone'] ?? '';
+        _addressController.text = user['address'] ?? '';
+        _birthDateController.text =
+            _formatDateForInput(user['birth_date']) ?? '';
+      });
+    }
+  }
+
+  String? _formatDateForInput(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return null;
+
+    try {
+      final DateTime date = DateTime.parse(dateString);
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateString; // Return original string if parsing fails
     }
   }
 
