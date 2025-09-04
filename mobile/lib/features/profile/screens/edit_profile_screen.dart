@@ -35,15 +35,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _loadUserData() {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = authProvider.user;
+    final profileProvider =
+        Provider.of<ProfileProvider>(context, listen: false);
+    final user = profileProvider.userProfile;
 
     if (user != null) {
-      _nameController.text = user.name;
-      _emailController.text = user.email;
-      _phoneController.text = user.phone ?? '';
-      _addressController.text = user.address ?? '';
-      _birthDateController.text = user.birthDate ?? '';
+      _nameController.text = user['name'] ?? '';
+      _emailController.text = user['email'] ?? '';
+      _phoneController.text = user['phone'] ?? '';
+      _addressController.text = user['address'] ?? '';
+      _birthDateController.text = user['birth_date'] ?? '';
     }
   }
 
@@ -111,16 +112,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final profileProvider =
           Provider.of<ProfileProvider>(context, listen: false);
 
-      final profileData = {
-        'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'address': _addressController.text.trim(),
-        'birth_date': _birthDateController.text.trim(),
-      };
-
       final success = await profileProvider.updateProfile(
-        profileData: profileData,
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        birthDate: _birthDateController.text.trim().isNotEmpty
+            ? _birthDateController.text.trim()
+            : null,
+        address: _addressController.text.trim(),
         profileImage: _profileImage,
       );
 

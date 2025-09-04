@@ -28,15 +28,16 @@ class ProfileService {
   /// Get user profile
   Future<Map<String, dynamic>> getUserProfile() async {
     try {
+      print('🔄 Getting user profile...');
       _addAuthToken();
 
       final response = await _dio.get('/v1/profile');
 
+      print('✅ Profile response: ${response.statusCode}');
+      print('📊 Profile data: ${response.data}');
+
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': response.data['data'],
-        };
+        return response.data;
       }
 
       return {
@@ -60,27 +61,33 @@ class ProfileService {
 
   /// Update user profile
   Future<Map<String, dynamic>> updateProfile({
-    required Map<String, dynamic> profileData,
+    String? name,
+    String? phone,
+    String? birthDate,
+    String? address,
+    String? gender,
     File? profileImage,
   }) async {
     try {
+      print('🔄 Updating profile...');
       _addAuthToken();
 
       FormData formData = FormData();
 
       // Add profile data
-      profileData.forEach((key, value) {
-        if (value != null) {
-          formData.fields.add(MapEntry(key, value.toString()));
-        }
-      });
+      if (name != null) formData.fields.add(MapEntry('name', name));
+      if (phone != null) formData.fields.add(MapEntry('phone', phone));
+      if (birthDate != null)
+        formData.fields.add(MapEntry('birth_date', birthDate));
+      if (address != null) formData.fields.add(MapEntry('address', address));
+      if (gender != null) formData.fields.add(MapEntry('gender', gender));
 
       // Add profile image if provided
       if (profileImage != null) {
         String fileName = profileImage.path.split('/').last;
         formData.files.add(
           MapEntry(
-            'avatar',
+            'profile_picture',
             await MultipartFile.fromFile(
               profileImage.path,
               filename: fileName,
@@ -89,14 +96,13 @@ class ProfileService {
         );
       }
 
-      final response = await _dio.put('/v1/profile', data: formData);
+      final response = await _dio.put('/profile', data: formData);
+
+      print('✅ Update response: ${response.statusCode}');
+      print('📊 Update result: ${response.data}');
 
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': response.data['data'],
-          'message': response.data['message'],
-        };
+        return response.data;
       }
 
       return {
@@ -126,22 +132,21 @@ class ProfileService {
     required String confirmPassword,
   }) async {
     try {
+      print('🔄 Changing password...');
       _addAuthToken();
 
       final data = {
         'current_password': currentPassword,
-        'password': newPassword,
-        'password_confirmation': confirmPassword,
+        'new_password': newPassword,
+        'new_password_confirmation': confirmPassword,
       };
 
-      final response =
-          await _dio.post('/v1/profile/change-password', data: data);
+      final response = await _dio.post('/profile/change-password', data: data);
+
+      print('✅ Password change response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'message': response.data['message'],
-        };
+        return response.data;
       }
 
       return {
@@ -167,25 +172,24 @@ class ProfileService {
   /// Upload profile image
   Future<Map<String, dynamic>> uploadProfileImage(File imageFile) async {
     try {
+      print('🔄 Uploading profile image...');
       _addAuthToken();
 
       String fileName = imageFile.path.split('/').last;
       FormData formData = FormData.fromMap({
-        'avatar': await MultipartFile.fromFile(
+        'profile_picture': await MultipartFile.fromFile(
           imageFile.path,
           filename: fileName,
         ),
       });
 
-      final response =
-          await _dio.post('/v1/profile/upload-image', data: formData);
+      final response = await _dio.post('/profile/upload-image', data: formData);
+
+      print('✅ Upload response: ${response.statusCode}');
+      print('📊 Upload result: ${response.data}');
 
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': response.data['data'],
-          'message': response.data['message'],
-        };
+        return response.data;
       }
 
       return {
