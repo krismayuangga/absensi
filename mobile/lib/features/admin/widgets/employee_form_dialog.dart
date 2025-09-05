@@ -55,9 +55,34 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
     _phoneController.text = employee['phone'] ?? '';
     _employeeIdController.text = employee['employee_id'] ?? '';
     _addressController.text = employee['address'] ?? '';
-    _selectedCompany = employee['company_id']?.toString();
-    _selectedDepartment = employee['department_id']?.toString();
-    _selectedPosition = employee['position_id']?.toString();
+
+    // Safely set company, department, position with validation
+    final companyId = employee['company_id']?.toString();
+    if (companyId != null &&
+        widget.adminProvider.companies
+            .any((c) => c['id'].toString() == companyId)) {
+      _selectedCompany = companyId;
+    } else {
+      _selectedCompany = null;
+    }
+
+    final departmentId = employee['department_id']?.toString();
+    if (departmentId != null &&
+        widget.adminProvider.departments
+            .any((d) => d['id'].toString() == departmentId)) {
+      _selectedDepartment = departmentId;
+    } else {
+      _selectedDepartment = null;
+    }
+
+    final positionId = employee['position_id']?.toString();
+    if (positionId != null &&
+        widget.adminProvider.positions
+            .any((p) => p['id'].toString() == positionId)) {
+      _selectedPosition = positionId;
+    } else {
+      _selectedPosition = null;
+    }
 
     // Map database status to dropdown values
     final dbStatus = employee['status'] ?? 'active';
@@ -300,12 +325,18 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                           labelText: 'Perusahaan',
                           border: OutlineInputBorder(),
                         ),
-                        items: widget.adminProvider.companies
-                            .map((company) => DropdownMenuItem(
-                                  value: company['id'].toString(),
-                                  child: Text(company['name']),
-                                ))
-                            .toList(),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('Pilih Perusahaan'),
+                          ),
+                          ...widget.adminProvider.companies
+                              .map((company) => DropdownMenuItem(
+                                    value: company['id'].toString(),
+                                    child: Text(company['name'] ?? 'Unknown'),
+                                  ))
+                              .toList(),
+                        ],
                         onChanged: (value) {
                           setState(() {
                             _selectedCompany = value;
@@ -322,12 +353,18 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                           labelText: 'Departemen',
                           border: OutlineInputBorder(),
                         ),
-                        items: widget.adminProvider.departments
-                            .map((dept) => DropdownMenuItem(
-                                  value: dept['id'].toString(),
-                                  child: Text(dept['name']),
-                                ))
-                            .toList(),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('Pilih Departemen'),
+                          ),
+                          ...widget.adminProvider.departments
+                              .map((dept) => DropdownMenuItem(
+                                    value: dept['id'].toString(),
+                                    child: Text(dept['name'] ?? 'Unknown'),
+                                  ))
+                              .toList(),
+                        ],
                         onChanged: (value) {
                           setState(() {
                             _selectedDepartment = value;
@@ -344,12 +381,18 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                           labelText: 'Jabatan',
                           border: OutlineInputBorder(),
                         ),
-                        items: widget.adminProvider.positions
-                            .map((pos) => DropdownMenuItem(
-                                  value: pos['id'].toString(),
-                                  child: Text(pos['name']),
-                                ))
-                            .toList(),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('Pilih Jabatan'),
+                          ),
+                          ...widget.adminProvider.positions
+                              .map((pos) => DropdownMenuItem(
+                                    value: pos['id'].toString(),
+                                    child: Text(pos['name'] ?? 'Unknown'),
+                                  ))
+                              .toList(),
+                        ],
                         onChanged: (value) {
                           setState(() {
                             _selectedPosition = value;
