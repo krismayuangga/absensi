@@ -12,11 +12,11 @@ return [
     */
 
     'office' => [
-        'latitude' => -6.200000, // Replace with actual office latitude
-        'longitude' => 106.816666, // Replace with actual office longitude
-        'radius' => 100, // Office radius in meters (100m = safe zone)
+        'latitude' => -6.270075, // Kemang area - matched with mobile app
+        'longitude' => 106.819858, // Kemang area - matched with mobile app
+        'radius' => 200, // Office radius in meters (200m = larger safe zone)
         'name' => 'Kantor Pusat',
-        'address' => 'Jakarta, Indonesia',
+        'address' => 'Jl. Kemang Dalam III, Jakarta, Indonesia',
     ],
 
     /*
@@ -30,9 +30,9 @@ return [
 
     'field_work' => [
         'enable_geofence' => true,
-        'mandatory_photo' => true,
+        'mandatory_photo' => false, // Make photo optional for easier testing
         'mandatory_description' => true,
-        'mandatory_client_name' => true,
+        'mandatory_client_name' => false, // Make client name optional
         'min_description_length' => 10,
         'max_travel_speed' => 200, // km/h for teleportation detection
         'gps_precision_limit' => 8, // decimal places for fake GPS detection

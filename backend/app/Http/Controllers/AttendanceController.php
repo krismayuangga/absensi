@@ -75,9 +75,9 @@ class AttendanceController extends Controller
 
             // Office location configuration with defensive programming
             $officeConfig = config('attendance.office', []);
-            $officeLat = $officeConfig['latitude'] ?? -6.200000;
-            $officeLng = $officeConfig['longitude'] ?? 106.816666;
-            $officeRadius = $officeConfig['radius'] ?? 100;
+            $officeLat = $officeConfig['latitude'] ?? -6.270075;
+            $officeLng = $officeConfig['longitude'] ?? 106.819858;
+            $officeRadius = $officeConfig['radius'] ?? 200;
 
             // Calculate distance from office
             $distance = $this->calculateDistance(
@@ -90,9 +90,23 @@ class AttendanceController extends Controller
             $isInOffice = $distance <= $officeRadius;
             $workType = $request->work_type ?? ($isInOffice ? 'office' : 'field_work');
 
+            // Debug info
+            error_log("User Lat: {$request->latitude}, Lng: {$request->longitude}");
+            error_log("Office Lat: {$officeLat}, Lng: {$officeLng}");
+            error_log("Distance: {$distance}m, Radius: {$officeRadius}m");
+            error_log("Is In Office: " . ($isInOffice ? 'Yes' : 'No'));
+
             // Validation for field work with defensive programming
             if (!$isInOffice && $workType !== 'office') {
                 $fieldWorkConfig = config('attendance.field_work', []);
+                
+                // If field work is disabled, reject attendance outside office
+                if (!($fieldWorkConfig['enable_geofence'] ?? true)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Anda berada {$distance}m dari kantor. Absensi hanya dapat dilakukan di area kantor (radius {$officeRadius}m)"
+                    ], 422);
+                }
                 
                 // Mandatory photo for field work
                 if (($fieldWorkConfig['mandatory_photo'] ?? false) && !$request->hasFile('photo')) {

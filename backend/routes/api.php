@@ -211,6 +211,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
             
             // Admin management routes
             Route::get('dashboard/stats', [AdminController::class, 'getDashboardStats']);
+            Route::get('dashboard/attendance-detail', [AdminController::class, 'getDetailedAttendanceReport']);
             Route::get('employees', [AdminController::class, 'getEmployees']);
             Route::post('employees', [AdminController::class, 'createEmployee']);
             Route::put('employees/{id}', [AdminController::class, 'updateEmployee']);

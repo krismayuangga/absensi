@@ -23,39 +23,209 @@ class AdminController extends Controller
     public function getDashboardStats()
     {
         try {
-            // Simple test data first
+            // Real data from database
+            $totalEmployees = User::where('role', 'employee')->where('is_active', true)->count();
+            
+            $today = Carbon::today();
+            $todayAttendance = Attendance::whereDate('date', $today)
+                ->where('status', 'present')
+                ->distinct('user_id')
+                ->count();
+            
+            $attendancePercentage = $totalEmployees > 0 
+                ? round(($todayAttendance / $totalEmployees) * 100, 1) 
+                : 0;
+            
+            $pendingLeaves = Leave::where('status', 'pending')->count();
+            
+            // Monthly average attendance
+            $currentMonth = Carbon::now()->startOfMonth();
+            $daysInMonth = Carbon::now()->diffInDays($currentMonth) + 1;
+            $monthlyAttendance = Attendance::where('date', '>=', $currentMonth)
+                ->where('status', 'present')
+                ->distinct('user_id')
+                ->count();
+            $monthlyAverage = $daysInMonth > 0 ? round($monthlyAttendance / $daysInMonth, 1) : 0;
+            
+            // Additional statistics
+            $lateToday = Attendance::whereDate('date', $today)
+                ->whereTime('clock_in_time', '>', '08:30:00')
+                ->count();
+                
+            $earlyLeaveToday = Attendance::whereDate('date', $today)
+                ->whereTime('clock_out_time', '<', '17:00:00')
+                ->whereNotNull('clock_out_time')
+                ->count();
+                
+            $overtimeToday = Attendance::whereDate('date', $today)
+                ->whereRaw('TIME(clock_out_time) > TIME("17:30:00")')
+                ->whereNotNull('clock_out_time')
+                ->count();
+                
+            // Weekly attendance trend
+            $weeklyStats = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $date = Carbon::today()->subDays($i);
+                $attendanceCount = Attendance::whereDate('date', $date)
+                    ->where('status', 'present')
+                    ->count();
+                $weeklyStats[] = [
+                    'tanggal' => $date->format('d/m'),
+                    'hari' => $date->locale('id')->isoFormat('dddd'),
+                    'hadir' => $attendanceCount,
+                    'persentase' => $totalEmployees > 0 ? round(($attendanceCount / $totalEmployees) * 100) : 0
+                ];
+            }
+
             $stats = [
-                'total_employees' => 10,
-                'today_attendance' => 8,
-                'attendance_percentage' => 80.0,
-                'pending_leaves' => 2,
-                'monthly_average' => 7.5,
+                'total_karyawan' => $totalEmployees,
+                'hadir_hari_ini' => $todayAttendance,
+                'persentase_kehadiran' => $attendancePercentage,
+                'cuti_pending' => $pendingLeaves,
+                'rata_rata_bulanan' => $monthlyAverage,
+                'terlambat_hari_ini' => $lateToday,
+                'pulang_cepat_hari_ini' => $earlyLeaveToday,
+                'lembur_hari_ini' => $overtimeToday,
+                'trend_mingguan' => $weeklyStats,
             ];
             
-            $activities = [
-                [
-                    'id' => 1,
-                    'employee_name' => 'Test Employee',
-                    'employee_code' => 'EMP001',
-                    'action' => 'clock_in',
-                    'time' => '2025-09-04T09:00:00Z',
-                    'date' => '2025-09-04',
-                    'status' => 'present',
-                ]
-            ];
+            // Recent activities from real data - dengan bahasa Indonesia
+            $activities = Attendance::with('user:id,name,employee_id')
+                ->whereDate('date', $today)
+                ->latest('created_at')
+                ->limit(10)
+                ->get()
+                ->map(function ($attendance) {
+                    $action = 'Masuk';
+                    $time = $attendance->clock_in_time;
+                    $status = 'Tepat Waktu';
+                    
+                    // Determine action and status
+                    if ($attendance->clock_out_time) {
+                        $action = 'Keluar';
+                        $time = $attendance->clock_out_time;
+                        if (Carbon::parse($attendance->clock_out_time)->format('H:i') < '17:00') {
+                            $status = 'Pulang Cepat';
+                        } elseif (Carbon::parse($attendance->clock_out_time)->format('H:i') > '17:30') {
+                            $status = 'Lembur';
+                        } else {
+                            $status = 'Normal';
+                        }
+                    } else {
+                        if (Carbon::parse($attendance->clock_in_time)->format('H:i') > '08:30') {
+                            $status = 'Terlambat';
+                        }
+                    }
+                    
+                    return [
+                        'id' => $attendance->id,
+                        'nama_karyawan' => $attendance->user->name ?? 'Unknown',
+                        'kode_karyawan' => $attendance->user->employee_id ?? 'N/A',
+                        'aksi' => $action,
+                        'waktu' => Carbon::parse($time)->format('H:i'),
+                        'tanggal' => $attendance->date,
+                        'status' => $status,
+                        'keterangan' => $attendance->notes ?? '-',
+                    ];
+                })
+                ->toArray();
 
             return response()->json([
                 'success' => true,
+                'message' => 'Data dashboard berhasil dimuat',
                 'data' => [
-                    'stats' => $stats,
-                    'recent_activities' => $activities,
+                    'statistik' => $stats,
+                    'aktivitas_terkini' => $activities,
                 ],
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error retrieving dashboard stats: ' . $e->getMessage(),
+                'message' => 'Gagal memuat data dashboard: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get detailed attendance report for dashboard
+     */
+    public function getDetailedAttendanceReport(Request $request)
+    {
+        try {
+            $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+            $status = $request->get('status'); // present, late, early_leave, overtime
+            
+            $query = Attendance::with(['user:id,name,employee_id,position,department'])
+                ->whereDate('date', $date);
+                
+            // Filter by status
+            if ($status == 'late') {
+                $query->whereTime('clock_in_time', '>', '08:30:00');
+            } elseif ($status == 'early_leave') {
+                $query->whereTime('clock_out_time', '<', '17:00:00')
+                      ->whereNotNull('clock_out_time');
+            } elseif ($status == 'overtime') {
+                $query->whereTime('clock_out_time', '>', '17:30:00')
+                      ->whereNotNull('clock_out_time');
+            } elseif ($status == 'present') {
+                $query->where('status', 'present');
+            }
+            
+            $attendances = $query->get()->map(function ($attendance) {
+                $clockIn = $attendance->clock_in_time ? Carbon::parse($attendance->clock_in_time) : null;
+                $clockOut = $attendance->clock_out_time ? Carbon::parse($attendance->clock_out_time) : null;
+                
+                $status = 'Normal';
+                $workingHours = 0;
+                
+                if ($clockIn && $clockIn->format('H:i') > '08:30') {
+                    $status = 'Terlambat';
+                }
+                
+                if ($clockOut) {
+                    if ($clockOut->format('H:i') < '17:00') {
+                        $status = 'Pulang Cepat';
+                    } elseif ($clockOut->format('H:i') > '17:30') {
+                        $status = 'Lembur';
+                    }
+                    
+                    if ($clockIn) {
+                        $workingHours = $clockOut->diffInMinutes($clockIn) / 60;
+                    }
+                }
+                
+                return [
+                    'id' => $attendance->id,
+                    'nama' => $attendance->user->name,
+                    'kode_karyawan' => $attendance->user->employee_id,
+                    'posisi' => $attendance->user->position ?? '-',
+                    'departemen' => $attendance->user->department ?? '-',
+                    'jam_masuk' => $clockIn ? $clockIn->format('H:i:s') : '-',
+                    'jam_keluar' => $clockOut ? $clockOut->format('H:i:s') : '-',
+                    'jam_kerja' => round($workingHours, 2),
+                    'status' => $status,
+                    'lokasi_masuk' => $attendance->clock_in_address ?? '-',
+                    'lokasi_keluar' => $attendance->clock_out_address ?? '-',
+                    'keterangan' => $attendance->notes ?? '-',
+                    'tanggal' => Carbon::parse($attendance->date)->format('d/m/Y'),
+                ];
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Detail kehadiran berhasil dimuat',
+                'data' => [
+                    'tanggal' => Carbon::parse($date)->format('d/m/Y'),
+                    'total' => $attendances->count(),
+                    'kehadiran' => $attendances,
+                ],
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat detail kehadiran: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -66,51 +236,61 @@ class AdminController extends Controller
     public function getEmployees(Request $request)
     {
         try {
-            // Simple test data first
-            $employees = [
-                'data' => [
-                    [
-                        'id' => 1,
-                        'name' => 'Test Employee 1',
-                        'email' => 'employee1@test.com',
-                        'employee_code' => 'EMP001',
-                        'phone' => '081234567890',
-                        'hire_date' => '2024-01-15',
-                        'status' => 'active',
-                        'salary' => 5000000,
-                        'company' => ['id' => 1, 'name' => 'Main Company'],
-                        'department' => ['id' => 1, 'name' => 'IT Department'],
-                        'position' => ['id' => 1, 'name' => 'Developer'],
-                    ],
-                    [
-                        'id' => 2,
-                        'name' => 'Test Employee 2',
-                        'email' => 'employee2@test.com',
-                        'employee_code' => 'EMP002',
-                        'phone' => '081234567891',
-                        'hire_date' => '2024-02-10',
-                        'status' => 'active',
-                        'salary' => 4500000,
-                        'company' => ['id' => 1, 'name' => 'Main Company'],
-                        'department' => ['id' => 2, 'name' => 'HR Department'],
-                        'position' => ['id' => 2, 'name' => 'Manager'],
-                    ],
-                ],
-                'current_page' => 1,
-                'last_page' => 1,
-                'per_page' => 15,
-                'total' => 2,
+            $perPage = $request->get('per_page', 15);
+            $search = $request->get('search');
+            
+            $query = User::where('role', 'employee')
+                ->select([
+                    'id', 'name', 'email', 'employee_id as employee_code', 
+                    'phone', 'join_date', 'is_active as status',
+                    'company_id', 'department', 'position'
+                ]);
+            
+            if ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('employee_id', 'like', "%{$search}%");
+                });
+            }
+            
+            $employees = $query->paginate($perPage);
+            
+            // Transform the data to match expected format - Bahasa Indonesia
+            $transformedData = $employees->getCollection()->map(function ($employee) {
+                return [
+                    'id' => $employee->id,
+                    'nama' => $employee->name,
+                    'email' => $employee->email,
+                    'kode_karyawan' => $employee->employee_code,
+                    'telepon' => $employee->phone,
+                    'tanggal_bergabung' => $employee->join_date ? Carbon::parse($employee->join_date)->format('d/m/Y') : '-',
+                    'status' => $employee->status ? 'Aktif' : 'Non-Aktif',
+                    'gaji' => 0, // Default value
+                    'perusahaan' => ['id' => $employee->company_id ?? 1, 'nama' => 'PT. Kinerja Absensi'],
+                    'departemen' => ['id' => 1, 'nama' => $employee->department ?? 'IT Department'],
+                    'posisi' => ['id' => 1, 'nama' => $employee->position ?? 'Staff'],
+                ];
+            });
+            
+            $paginationData = [
+                'data' => $transformedData,
+                'halaman_saat_ini' => $employees->currentPage(),
+                'halaman_terakhir' => $employees->lastPage(),
+                'per_halaman' => $employees->perPage(),
+                'total' => $employees->total(),
             ];
             
             return response()->json([
                 'success' => true,
-                'data' => $employees,
+                'message' => 'Data karyawan berhasil dimuat',
+                'data' => $paginationData,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error retrieving employees: ' . $e->getMessage(),
+                'message' => 'Gagal memuat data karyawan: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -256,7 +436,7 @@ class AdminController extends Controller
             $employeeId = $request->get('employee_id');
             $status = $request->get('status');
             
-            $query = Attendance::with(['user:id,name,employee_code']);
+            $query = Attendance::with(['user:id,name,employee_id']);
             
             if ($date) {
                 $query->whereDate('date', $date);
@@ -295,7 +475,7 @@ class AdminController extends Controller
             $status = $request->get('status');
             $employeeId = $request->get('employee_id');
             
-            $query = Leave::with(['user:id,name,employee_code']);
+            $query = Leave::with(['user:id,name,employee_id']);
             
             if ($status) {
                 $query->where('status', $status);
@@ -370,37 +550,44 @@ class AdminController extends Controller
     public function getMasterData()
     {
         try {
-            // Simple test data first
+            // Real data from database or reasonable defaults - Bahasa Indonesia
             $companies = [
-                ['id' => 1, 'name' => 'Main Company'],
-                ['id' => 2, 'name' => 'Branch Office'],
+                ['id' => 1, 'nama' => 'PT. Kinerja Absensi'],
+                ['id' => 2, 'nama' => 'Cabang Jakarta'],
+                ['id' => 3, 'nama' => 'Cabang Bandung'],
             ];
             
             $departments = [
-                ['id' => 1, 'name' => 'IT Department'],
-                ['id' => 2, 'name' => 'HR Department'],
-                ['id' => 3, 'name' => 'Finance Department'],
+                ['id' => 1, 'nama' => 'Teknologi Informasi'],
+                ['id' => 2, 'nama' => 'Sumber Daya Manusia'],
+                ['id' => 3, 'nama' => 'Keuangan'],
+                ['id' => 4, 'nama' => 'Pemasaran'],
+                ['id' => 5, 'nama' => 'Operasional'],
             ];
             
             $positions = [
-                ['id' => 1, 'name' => 'Manager'],
-                ['id' => 2, 'name' => 'Developer'],
-                ['id' => 3, 'name' => 'Staff'],
+                ['id' => 1, 'nama' => 'Manajer'],
+                ['id' => 2, 'nama' => 'Senior Developer'],
+                ['id' => 3, 'nama' => 'Developer'],
+                ['id' => 4, 'nama' => 'Staff'],
+                ['id' => 5, 'nama' => 'Magang'],
+                ['id' => 6, 'nama' => 'System Administrator'],
             ];
 
             return response()->json([
                 'success' => true,
+                'message' => 'Data master berhasil dimuat',
                 'data' => [
-                    'companies' => $companies,
-                    'departments' => $departments,
-                    'positions' => $positions,
+                    'perusahaan' => $companies,
+                    'departemen' => $departments,
+                    'posisi' => $positions,
                 ],
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error retrieving master data: ' . $e->getMessage(),
+                'message' => 'Gagal memuat data master: ' . $e->getMessage(),
             ], 500);
         }
     }
