@@ -7,6 +7,7 @@ import 'widgets/attendance_today_widget.dart';
 import 'widgets/employee_list_widget.dart';
 import 'widgets/attendance_management_widget.dart';
 import 'widgets/leave_management_widget.dart';
+import 'widgets/recent_activities_widget.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({Key? key}) : super(key: key);
@@ -125,6 +126,7 @@ class _AdminMainScreenState extends State<AdminMainScreen>
                         icon: Icons.people,
                         color: Colors.blue,
                         subtitle: 'Karyawan aktif',
+                        onTap: () => _switchToTab(1), // Switch to Karyawan tab
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -136,6 +138,7 @@ class _AdminMainScreenState extends State<AdminMainScreen>
                         color: Colors.green,
                         subtitle:
                             '${stats['persentase_kehadiran'] ?? 0}% hadir',
+                        onTap: () => _switchToTab(2), // Switch to Kehadiran tab
                       ),
                     ),
                   ],
@@ -150,6 +153,7 @@ class _AdminMainScreenState extends State<AdminMainScreen>
                         icon: Icons.event_note,
                         color: Colors.orange,
                         subtitle: 'Perlu persetujuan',
+                        onTap: () => _switchToTab(3), // Switch to Cuti tab
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -160,6 +164,7 @@ class _AdminMainScreenState extends State<AdminMainScreen>
                         icon: Icons.trending_up,
                         color: Colors.purple,
                         subtitle: 'Kehadiran per hari',
+                        onTap: () => _switchToTab(2), // Switch to Kehadiran tab
                       ),
                     ),
                   ],
@@ -169,11 +174,18 @@ class _AdminMainScreenState extends State<AdminMainScreen>
 
               // Today's Attendance Widget
               const AttendanceTodayWidget(),
+
+              // Recent Activities Widget
+              const RecentActivitiesWidget(),
             ],
           ),
         );
       },
     );
+  }
+
+  void _switchToTab(int index) {
+    _tabController.animateTo(index);
   }
 
   Widget _buildEmployeesTab() {
