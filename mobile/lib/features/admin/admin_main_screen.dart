@@ -5,6 +5,8 @@ import '../../core/theme/app_theme.dart';
 import 'widgets/admin_stats_card.dart';
 import 'widgets/attendance_today_widget.dart';
 import 'widgets/employee_list_widget.dart';
+import 'widgets/attendance_management_widget.dart';
+import 'widgets/leave_management_widget.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({Key? key}) : super(key: key);
@@ -179,20 +181,10 @@ class _AdminMainScreenState extends State<AdminMainScreen>
   }
 
   Widget _buildAttendanceTab() {
-    return const Center(
-      child: Text(
-        'Attendance Management',
-        style: TextStyle(fontSize: 18),
-      ),
-    );
+    return const AttendanceManagementWidget();
   }
 
   Widget _buildLeavesTab() {
-    return const Center(
-      child: Text(
-        'Leave Management',
-        style: TextStyle(fontSize: 18),
-      ),
-    );
+    return const LeaveManagementWidget();
   }
 }
