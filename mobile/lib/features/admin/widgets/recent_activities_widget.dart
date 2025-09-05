@@ -129,9 +129,11 @@ class RecentActivitiesWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
-        border: Border.left(
-          width: 4,
-          color: actionColor,
+        border: Border(
+          left: BorderSide(
+            width: 4,
+            color: actionColor,
+          ),
         ),
       ),
       child: Row(

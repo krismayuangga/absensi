@@ -3,6 +3,28 @@
 
 C:\xampp\php\php.exe artisan serve --port=8000
 
+🚀 CARA MENGGUNAKAN BACKUP OTOMATIS:
+Method 1: Auto Backup Task
+
+1. Tekan Ctrl+Shift+P
+2. Ketik "Tasks: Run Task"
+3. Pilih "🔒 Auto Git Backup"
+4. Semua perubahan otomatis commit & push
+
+Method 2: Quick Save dengan Pesan
+1. Tekan Ctrl+Shift+P
+2. Ketik "Tasks: Run Task"
+3. Pilih "💾 Quick Save to Git"
+4. Masukkan pesan commit
+5. Enter untuk backup
+
+Method 3: Manual Terminal
+
+git add -A
+git commit -m "Your message here"
+git push
+
+
 ## 🎉 **BREAKTHROUGH HARI INI - ADMIN DASHBOARD BERHASIL!**
 
 ### ✅ **MAJOR ACHIEVEMENTS TODAY:**
