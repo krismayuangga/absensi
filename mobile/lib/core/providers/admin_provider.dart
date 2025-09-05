@@ -68,10 +68,11 @@ class AdminProvider extends ChangeNotifier {
       final result = await _adminService.getDashboardStats();
 
       if (result['success'] == true) {
-        _dashboardStats = result['data']?['stats'];
+        // Update untuk field bahasa Indonesia
+        _dashboardStats = result['data']?['statistik'];
 
-        // Safe parsing for recent activities
-        final activitiesData = result['data']?['recent_activities'];
+        // Safe parsing for recent activities - bahasa Indonesia
+        final activitiesData = result['data']?['aktivitas_terkini'];
         _recentActivities = [];
         if (activitiesData is List) {
           for (var item in activitiesData) {
@@ -130,8 +131,8 @@ class AdminProvider extends ChangeNotifier {
           _employees.addAll(newEmployees);
         }
 
-        _currentEmployeePage = data?['current_page'] ?? 1;
-        _totalEmployeePages = data?['last_page'] ?? 1;
+        _currentEmployeePage = data?['halaman_saat_ini'] ?? 1;
+        _totalEmployeePages = data?['halaman_terakhir'] ?? 1;
         _hasMoreEmployees = _currentEmployeePage < _totalEmployeePages;
 
         if (_hasMoreEmployees) {

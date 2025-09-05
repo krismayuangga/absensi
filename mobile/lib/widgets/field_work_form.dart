@@ -56,14 +56,6 @@ class _FieldWorkFormState extends State<FieldWorkForm> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      if (_selectedPhoto == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Foto wajib diambil untuk kerja lapangan')),
-        );
-        return;
-      }
-
       widget.onSubmit(
         _activityController.text.trim(),
         _clientController.text.trim(),
@@ -175,8 +167,9 @@ class _FieldWorkFormState extends State<FieldWorkForm> {
                     TextFormField(
                       controller: _clientController,
                       decoration: InputDecoration(
-                        labelText: 'Nama Klien/Lokasi *',
-                        hintText: 'Nama klien atau lokasi yang dikunjungi',
+                        labelText: 'Nama Klien/Lokasi',
+                        hintText:
+                            'Nama klien atau lokasi yang dikunjungi (opsional)',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -185,10 +178,10 @@ class _FieldWorkFormState extends State<FieldWorkForm> {
                         fillColor: Colors.grey.shade50,
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Nama klien/lokasi wajib diisi';
-                        }
-                        if (value.trim().length < 3) {
+                        // Make client name optional
+                        if (value != null &&
+                            value.trim().isNotEmpty &&
+                            value.trim().length < 3) {
                           return 'Nama minimal 3 karakter';
                         }
                         return null;
@@ -200,15 +193,11 @@ class _FieldWorkFormState extends State<FieldWorkForm> {
                       height: 120,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: _selectedPhoto == null
-                              ? Colors.red.shade300
-                              : Colors.green.shade300,
+                          color: Colors.blue.shade300,
                           width: 2,
                         ),
                         borderRadius: BorderRadius.circular(12),
-                        color: _selectedPhoto == null
-                            ? Colors.red.shade50
-                            : Colors.green.shade50,
+                        color: Colors.blue.shade50,
                       ),
                       child: _selectedPhoto == null
                           ? InkWell(
@@ -218,22 +207,22 @@ class _FieldWorkFormState extends State<FieldWorkForm> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(Icons.camera_alt,
-                                      size: 40, color: Colors.red.shade400),
+                                      size: 40, color: Colors.blue.shade400),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Ambil Foto Selfie *',
+                                    'Ambil Foto Selfie',
                                     style: TextStyle(
-                                      color: Colors.red.shade600,
+                                      color: Colors.blue.shade600,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Foto wajib untuk verifikasi',
+                                    'Foto opsional untuk verifikasi',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.red.shade400,
+                                      color: Colors.blue.shade400,
                                     ),
                                   ),
                                 ],

@@ -59,6 +59,39 @@
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "🔒 Auto Git Backup",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-Command", 
+				"git add -A; git commit -m 'Auto backup - $(Get-Date -Format \"yyyy-MM-dd HH:mm:ss\")'; git push"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "💾 Quick Save to Git",
+			"type": "shell", 
+			"command": "powershell",
+			"args": [
+				"-Command",
+				"$msg = Read-Host 'Commit message'; git add -A; git commit -m \"$msg\"; git push"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "new"
+			}
 		}
 	]
 }

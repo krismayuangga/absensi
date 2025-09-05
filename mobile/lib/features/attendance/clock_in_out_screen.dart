@@ -35,7 +35,7 @@ class _ClockInOutScreenState extends State<ClockInOutScreen> {
   // Office coordinates - Kemang area, Jakarta Selatan
   static const double officeLatitude = -6.270075;
   static const double officeLongitude = 106.819858;
-  static const double officeRadius = 100.0; // 100 meters
+  static const double officeRadius = 200.0; // 200 meters - matched with backend
 
   @override
   void initState() {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/admin_provider.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import 'widgets/admin_stats_card.dart';
 import 'widgets/attendance_today_widget.dart';
@@ -59,9 +58,9 @@ class _AdminMainScreenState extends State<AdminMainScreen>
           unselectedLabelColor: Colors.white70,
           tabs: const [
             Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
-            Tab(icon: Icon(Icons.people), text: 'Employees'),
-            Tab(icon: Icon(Icons.access_time), text: 'Attendance'),
-            Tab(icon: Icon(Icons.event_note), text: 'Leaves'),
+            Tab(icon: Icon(Icons.people), text: 'Karyawan'),
+            Tab(icon: Icon(Icons.access_time), text: 'Kehadiran'),
+            Tab(icon: Icon(Icons.event_note), text: 'Cuti'),
           ],
         ),
       ),
@@ -119,22 +118,22 @@ class _AdminMainScreenState extends State<AdminMainScreen>
                   children: [
                     Expanded(
                       child: AdminStatsCard(
-                        title: 'Total Employees',
-                        value: stats['total_employees']?.toString() ?? '0',
+                        title: 'Total Karyawan',
+                        value: stats['total_karyawan']?.toString() ?? '0',
                         icon: Icons.people,
                         color: Colors.blue,
-                        subtitle: 'Active employees',
+                        subtitle: 'Karyawan aktif',
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: AdminStatsCard(
-                        title: 'Today Attendance',
-                        value: stats['today_attendance']?.toString() ?? '0',
+                        title: 'Hadir Hari Ini',
+                        value: stats['hadir_hari_ini']?.toString() ?? '0',
                         icon: Icons.access_time,
                         color: Colors.green,
                         subtitle:
-                            '${stats['attendance_percentage'] ?? 0}% present',
+                            '${stats['persentase_kehadiran'] ?? 0}% hadir',
                       ),
                     ),
                   ],
@@ -144,21 +143,21 @@ class _AdminMainScreenState extends State<AdminMainScreen>
                   children: [
                     Expanded(
                       child: AdminStatsCard(
-                        title: 'Pending Leaves',
-                        value: stats['pending_leaves']?.toString() ?? '0',
+                        title: 'Cuti Pending',
+                        value: stats['cuti_pending']?.toString() ?? '0',
                         icon: Icons.event_note,
                         color: Colors.orange,
-                        subtitle: 'Need approval',
+                        subtitle: 'Perlu persetujuan',
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: AdminStatsCard(
-                        title: 'Monthly Average',
-                        value: stats['monthly_average']?.toString() ?? '0',
+                        title: 'Rata-rata Bulanan',
+                        value: stats['rata_rata_bulanan']?.toString() ?? '0',
                         icon: Icons.trending_up,
                         color: Colors.purple,
-                        subtitle: 'Attendance per day',
+                        subtitle: 'Kehadiran per hari',
                       ),
                     ),
                   ],

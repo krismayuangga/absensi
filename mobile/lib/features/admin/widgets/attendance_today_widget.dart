@@ -10,9 +10,9 @@ class AttendanceTodayWidget extends StatelessWidget {
     return Consumer<AdminProvider>(
       builder: (context, adminProvider, child) {
         final stats = adminProvider.dashboardStats;
-        final todayAttendance = stats?['today_attendance'] ?? 0;
-        final totalEmployees = stats?['total_employees'] ?? 0;
-        final percentage = (stats?['attendance_percentage']?.toDouble() ?? 0.0);
+        final todayAttendance = stats?['hadir_hari_ini'] ?? 0;
+        final totalEmployees = stats?['total_karyawan'] ?? 0;
+        final percentage = (stats?['persentase_kehadiran']?.toDouble() ?? 0.0);
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -34,7 +34,7 @@ class AttendanceTodayWidget extends StatelessWidget {
               Row(
                 children: [
                   const Text(
-                    "Today's Attendance",
+                    "Kehadiran Hari Ini",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -82,7 +82,7 @@ class AttendanceTodayWidget extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '$todayAttendance of $totalEmployees employees',
+                    '$todayAttendance dari $totalEmployees karyawan',
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 14,
@@ -90,7 +90,7 @@ class AttendanceTodayWidget extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'Present today',
+                    'Hadir hari ini',
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 12,
@@ -105,13 +105,13 @@ class AttendanceTodayWidget extends StatelessWidget {
               Row(
                 children: [
                   _buildStatusItem(
-                    'Present',
+                    'Hadir',
                     todayAttendance,
                     Colors.green,
                   ),
                   const SizedBox(width: 16),
                   _buildStatusItem(
-                    'Absent',
+                    'Tidak Hadir',
                     totalEmployees - todayAttendance,
                     Colors.red,
                   ),
