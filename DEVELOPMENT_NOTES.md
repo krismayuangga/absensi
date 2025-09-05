@@ -1,33 +1,170 @@
 # 📋 CATATAN LENGKAP UNTUK MELANJUTKAN DEVELOPMENT  
-## Tanggal: 04 September 2025
+## 🚨 URGENT ISSUES UNTUK BESOK - 06 September 2025
 
+### ⚠️ **CRITICAL ISSUES YANG BELUM SELESAI:**
+
+#### 🔴 **PRIORITY 1: Edit Karyawan Error (MUST FIX)**
+**Masalah:** Edit employee form masih error saat save
+**Root Cause:** 
+1. **Field mapping mismatch** - Backend expect `employee_code` tapi Frontend kirim `employee_id`
+2. **Master data kosong** - Dropdown Perusahaan/Departemen/Jabatan kosong (belum ada data)
+3. **Validation error 422** - Required fields tidak terpenuhi
+
+**Files yang perlu diperbaiki:**
+```
+📁 mobile/lib/features/admin/widgets/employee_form_dialog.dart
+- Line ~550: Ganti 'employee_id' → 'employee_code' 
+- Fix field mapping sesuai backend expectation
+
+� backend/app/Http/Controllers/Api/AdminController.php  
+- Method updateEmployee: Cek validation rules
+- Pastikan field names konsisten
+
+📁 backend/database/seeders/
+- Buat CompanySeeder.php
+- Buat DepartmentSeeder.php  
+- Buat PositionSeeder.php
+```
+
+**Action Items Besok:**
+```bash
+# 1. Fix field mapping di Flutter (30 mins)
+# 2. Create master data seeders (45 mins)  
+# 3. Run seeders untuk populate data (15 mins)
+# 4. Test edit employee functionality (30 mins)
+```
+
+---
+
+#### 🔴 **PRIORITY 2: Master Data Missing**
+**Masalah:** Dropdown Perusahaan/Departemen/Jabatan kosong
+**Root Cause:** Database belum ada data master
+
+**Solution Steps:**
+```sql
+-- 1. Create companies data
+INSERT INTO companies (name, address, created_at, updated_at) VALUES 
+('PT ABC Company', 'Jakarta', NOW(), NOW()),
+('PT XYZ Corporation', 'Bandung', NOW(), NOW());
+
+-- 2. Create departments data  
+INSERT INTO departments (name, company_id, created_at, updated_at) VALUES
+('Human Resources', 1, NOW(), NOW()),
+('IT Development', 1, NOW(), NOW()),
+('Finance', 1, NOW(), NOW());
+
+-- 3. Create positions data
+INSERT INTO positions (name, department_id, created_at, updated_at) VALUES
+('HR Manager', 1, NOW(), NOW()),
+('Software Developer', 2, NOW(), NOW()),
+('Accountant', 3, NOW(), NOW());
+```
+
+---
+
+#### 🔴 **PRIORITY 3: Kehadiran & Cuti Tab Error 401**
+**Masalah:** Tab Kehadiran dan Cuti error 401 (Unauthorized)
+**Root Cause:** JWT token tidak terkirim dengan benar ke API attendance/leave
+
+**Files to check:**
+```
+📁 mobile/lib/core/services/admin_service.dart
+- Method getAttendanceRecords()
+- Method getLeaveRequests()  
+- Pastikan Authorization header ada
+
+� backend/routes/api.php
+- Pastikan route attendance/leave protected dengan auth:api
+```
+
+---
+
+## 🔧 **STARTUP COMMANDS UNTUK BESOK:**
+
+```bash
+# 1. Start Backend Server
+cd C:\Users\Krismayuangga\absensi\backend
 C:\xampp\php\php.exe artisan serve --port=8000
 
-🚀 CARA MENGGUNAKAN BACKUP OTOMATIS:
-Method 1: Auto Backup Task
+# 2. Start Flutter App  
+cd C:\Users\Krismayuangga\absensi\mobile
+flutter run
 
-1. Tekan Ctrl+Shift+P
-2. Ketik "Tasks: Run Task"
-3. Pilih "🔒 Auto Git Backup"
-4. Semua perubahan otomatis commit & push
+# 3. Quick Backup (gunakan sering!)
+git add -A && git commit -m "Progress update" && git push
+```
 
-Method 2: Quick Save dengan Pesan
-1. Tekan Ctrl+Shift+P
-2. Ketik "Tasks: Run Task"
-3. Pilih "💾 Quick Save to Git"
-4. Masukkan pesan commit
-5. Enter untuk backup
+---
 
-Method 3: Manual Terminal
+## ✅ **ACHIEVEMENTS HARI INI (05 September 2025):**
 
-git add -A
-git commit -m "Your message here"
-git push
+### 🎯 **Yang Berhasil Diselesaikan:**
+1. **🔒 Auto Backup System** → VS Code tasks untuk prevent data loss
+2. **📱 Admin Dashboard UI** → 4 tabs dengan interactive stats cards  
+3. **🎨 Recent Activities Widget** → Real-time activity feed
+4. **👥 Employee List Widget** → CRUD functionality (Add/Edit/Delete)
+5. **⏰ Attendance Management Widget** → Filter & view attendance
+6. **📝 Leave Management Widget** → Approve/reject leave requests
+7. **🔧 Interactive Stats Cards** → Click untuk navigate antar tabs
 
+### 🔴 **Yang Masih Bermasalah:**
+1. **Edit Employee** → Error 422 field mapping & master data kosong
+2. **Kehadiran Tab** → Error 401 unauthorized  
+3. **Cuti Tab** → Error 401 unauthorized
+4. **Master Data** → Companies/Departments/Positions kosong
 
-## 🎉 **BREAKTHROUGH HARI INI - ADMIN DASHBOARD BERHASIL!**
+### 📊 **Technical Status:**
+- **Backend Server** → ✅ Running (Laravel API)
+- **Frontend App** → ✅ Running (Flutter)  
+- **Authentication** → ✅ Working (JWT login admin)
+- **Dashboard Stats** → ✅ Working (Indonesian data)
+- **Database** → ✅ Connected (6 test employees)
 
-### ✅ **MAJOR ACHIEVEMENTS TODAY:**
+---
+
+## 🔍 **DEBUGGING GUIDE UNTUK BESOK:**
+
+### 🐛 **Cara Debug Edit Employee Error:**
+```bash
+# 1. Cek error di Flutter Console
+flutter run --verbose
+
+# 2. Cek Laravel logs  
+tail -f backend/storage/logs/laravel.log
+
+# 3. Test API manual di Postman/Browser
+PUT http://localhost:8000/api/v1/admin/employees/{id}
+Headers: Authorization: Bearer {token}
+
+# 4. Cek database schema
+DESCRIBE users;
+DESCRIBE companies;  
+DESCRIBE departments;
+DESCRIBE positions;
+```
+
+### 📋 **Quick Fix Checklist:**
+```
+□ Fix field mapping employee_id → employee_code
+□ Create master data seeders (companies, departments, positions)  
+□ Run seeders: php artisan db:seed
+□ Test dropdown population in edit form
+□ Verify JWT token in attendance/leave API calls
+□ Check API endpoints authorization
+```
+
+### 🎯 **Expected Results After Fix:**
+```
+✅ Edit employee form bisa dibuka tanpa error
+✅ Dropdown Perusahaan/Departemen/Jabatan terisi data
+✅ Save employee berhasil (status 200)
+✅ Tab Kehadiran menampilkan data (bukan error 401)
+✅ Tab Cuti menampilkan data (bukan error 401)
+```
+
+---
+
+## 🎉 **BREAKTHROUGH SEBELUMNYA - ADMIN DASHBOARD BERHASIL!**
 
 #### 🚀 **Admin Dashboard System** - **FULLY FUNCTIONAL UI!**
 - **Backend**: ✅ AdminController fixed, API endpoints working
@@ -263,6 +400,43 @@ Authorization: Bearer {jwt_token}
     "pending_leaves": 2
   }
 }
+```
+
+---
+
+## 📝 **WHAT WE TRIED TODAY (RECORD UNTUK BESOK):**
+
+### 🔧 **Perbaikan yang Sudah Dicoba:**
+1. **DropdownButton Error** → ✅ Fixed dengan null safety & validation
+2. **RenderFlex Overflow** → ✅ Fixed dengan responsive layout
+3. **Field Mapping Error** → 🔄 Partially fixed (masih ada masalah employee_id vs employee_code)
+4. **Null Company/Department/Position** → 🔄 Added null checks tapi data tetap kosong
+5. **JWT Token 401 Error** → 🔄 Need to check service implementation
+
+### 🚨 **Error Messages Terakhir:**
+```
+1. Edit Employee: 422 Validation Error 
+   - Field mismatch: employee_id vs employee_code
+   - Required validation failing
+
+2. Kehadiran/Cuti: 401 Unauthorized
+   - JWT token tidak terkirim dengan benar
+   - Authorization header missing/invalid
+
+3. Master Data: Empty dropdowns
+   - companies/departments/positions tables kosong
+   - Perlu seeders atau manual insert
+```
+
+### 🎯 **Files Modified Today:**
+```
+✅ mobile/lib/features/admin/widgets/employee_form_dialog.dart
+✅ mobile/lib/features/admin/widgets/attendance_management_widget.dart  
+✅ mobile/lib/features/admin/widgets/leave_management_widget.dart
+✅ mobile/lib/features/admin/widgets/recent_activities_widget.dart
+✅ mobile/lib/features/admin/admin_main_screen.dart
+✅ .vscode/tasks.json (auto backup)
+✅ .vscode/settings.json (auto save)
 ```
 
 ---
