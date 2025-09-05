@@ -58,8 +58,32 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
     _selectedCompany = employee['company_id']?.toString();
     _selectedDepartment = employee['department_id']?.toString();
     _selectedPosition = employee['position_id']?.toString();
-    _selectedStatus = employee['status'] ?? 'active';
-    _selectedGender = employee['gender'] ?? 'male';
+
+    // Map database status to dropdown values
+    final dbStatus = employee['status'] ?? 'active';
+    switch (dbStatus.toLowerCase()) {
+      case 'active':
+      case 'aktif':
+        _selectedStatus = 'active';
+        break;
+      case 'inactive':
+      case 'tidak aktif':
+        _selectedStatus = 'inactive';
+        break;
+      case 'resigned':
+      case 'resign':
+        _selectedStatus = 'resigned';
+        break;
+      default:
+        _selectedStatus = 'active';
+    }
+
+    // Map database gender to dropdown values
+    final dbGender = employee['gender'] ?? 'male';
+    _selectedGender = (dbGender.toLowerCase() == 'female' ||
+            dbGender.toLowerCase() == 'perempuan')
+        ? 'female'
+        : 'male';
 
     if (employee['birth_date'] != null) {
       try {

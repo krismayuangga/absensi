@@ -263,7 +263,7 @@ class _EmployeeListWidgetState extends State<EmployeeListWidget> {
 
                                     const SizedBox(height: 8),
 
-                                    // Status
+                                    // Status and Join Date
                                     Row(
                                       children: [
                                         Container(
@@ -289,15 +289,21 @@ class _EmployeeListWidgetState extends State<EmployeeListWidget> {
                                             ),
                                           ),
                                         ),
-                                        const Spacer(),
-                                        if (employee['hire_date'] != null)
-                                          Text(
-                                            'Joined: ${_formatDate(employee['hire_date'])}',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: 10,
-                                            ),
-                                          ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: employee['hire_date'] != null
+                                              ? Text(
+                                                  'Bergabung: ${_formatDate(employee['hire_date'])}',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 10,
+                                                  ),
+                                                  textAlign: TextAlign.end,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                )
+                                              : const SizedBox.shrink(),
+                                        ),
                                       ],
                                     ),
                                   ],
