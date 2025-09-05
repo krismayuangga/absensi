@@ -322,7 +322,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                       DropdownButtonFormField<String>(
                         value: _selectedCompany,
                         decoration: const InputDecoration(
-                          labelText: 'Perusahaan',
+                          labelText: 'Perusahaan *',
                           border: OutlineInputBorder(),
                         ),
                         items: [
@@ -350,7 +350,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                       DropdownButtonFormField<String>(
                         value: _selectedDepartment,
                         decoration: const InputDecoration(
-                          labelText: 'Departemen',
+                          labelText: 'Departemen *',
                           border: OutlineInputBorder(),
                         ),
                         items: [
@@ -378,7 +378,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                       DropdownButtonFormField<String>(
                         value: _selectedPosition,
                         decoration: const InputDecoration(
-                          labelText: 'Jabatan',
+                          labelText: 'Jabatan *',
                           border: OutlineInputBorder(),
                         ),
                         items: [
@@ -560,6 +560,37 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       return;
     }
 
+    // Validate required fields for backend
+    if (_selectedCompany == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Perusahaan harus dipilih'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedDepartment == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Departemen harus dipilih'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Jabatan harus dipilih'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -568,18 +599,16 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       'name': _nameController.text.trim(),
       'email': _emailController.text.trim(),
       'phone': _phoneController.text.trim(),
-      'employee_id': _employeeIdController.text.trim(),
+      'employee_code': _employeeIdController.text
+          .trim(), // Changed from employee_id to employee_code
       'address': _addressController.text.trim(),
       'gender': _selectedGender,
       'birth_date': _selectedBirthDate?.toIso8601String().split('T')[0],
       'hire_date': _selectedHireDate!.toIso8601String().split('T')[0],
-      'company_id':
-          _selectedCompany != null ? int.tryParse(_selectedCompany!) : null,
-      'department_id': _selectedDepartment != null
-          ? int.tryParse(_selectedDepartment!)
-          : null,
-      'position_id':
-          _selectedPosition != null ? int.tryParse(_selectedPosition!) : null,
+      'company_id': int.parse(_selectedCompany!), // Now guaranteed not null
+      'department_id':
+          int.parse(_selectedDepartment!), // Now guaranteed not null
+      'position_id': int.parse(_selectedPosition!), // Now guaranteed not null
       'status': _selectedStatus,
     };
 
