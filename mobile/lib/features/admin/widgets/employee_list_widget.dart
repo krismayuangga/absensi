@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/admin_provider.dart';
+import 'employee_form_dialog.dart';
 
 class EmployeeListWidget extends StatefulWidget {
   const EmployeeListWidget({Key? key}) : super(key: key);
@@ -353,19 +354,22 @@ class _EmployeeListWidgetState extends State<EmployeeListWidget> {
   }
 
   void _showAddEmployeeDialog() {
-    // TODO: Implement add employee dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Add employee feature coming soon!'),
+    final adminProvider = Provider.of<AdminProvider>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (context) => EmployeeFormDialog(
+        adminProvider: adminProvider,
       ),
     );
   }
 
   void _showEditEmployeeDialog(Map<String, dynamic> employee) {
-    // TODO: Implement edit employee dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Edit ${employee['name']} feature coming soon!'),
+    final adminProvider = Provider.of<AdminProvider>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (context) => EmployeeFormDialog(
+        employee: employee,
+        adminProvider: adminProvider,
       ),
     );
   }
