@@ -31,17 +31,44 @@ class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
         end = inputFormat.parse(endDate);
       }
 
-      final DateFormat outputFormat = DateFormat('d MMM yyyy', 'id_ID');
+      // Format without locale to avoid issues
+      final List<String> months = [
+        '',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Ags',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des'
+      ];
+
+      String formatDate(DateTime date) {
+        return '${date.day} ${months[date.month]} ${date.year}';
+      }
 
       if (start.year == end.year &&
           start.month == end.month &&
           start.day == end.day) {
-        return outputFormat.format(start);
+        return formatDate(start);
       } else {
-        return '${outputFormat.format(start)} - ${outputFormat.format(end)}';
+        return '${formatDate(start)} - ${formatDate(end)}';
       }
     } catch (e) {
-      // Fallback to original format if parsing fails
+      print('Error formatting date: $e');
+      // Fallback: extract date part only if ISO format
+      if (startDate.contains('T') && endDate.contains('T')) {
+        final startDateOnly = startDate.split('T')[0];
+        final endDateOnly = endDate.split('T')[0];
+        return startDateOnly == endDateOnly
+            ? startDateOnly
+            : '$startDateOnly s/d $endDateOnly';
+      }
       return startDate == endDate ? startDate : '$startDate s/d $endDate';
     }
   } // Helper function to format datetime
@@ -51,9 +78,32 @@ class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
 
     try {
       final DateTime dateTime = DateTime.parse(dateTimeStr);
-      final DateFormat formatter = DateFormat('d MMM yyyy, HH:mm', 'id_ID');
-      return formatter.format(dateTime);
+
+      // Format without locale to avoid issues
+      final List<String> months = [
+        '',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Ags',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des'
+      ];
+
+      final String formattedDate =
+          '${dateTime.day} ${months[dateTime.month]} ${dateTime.year}';
+      final String formattedTime =
+          '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+
+      return '$formattedDate, $formattedTime';
     } catch (e) {
+      print('Error formatting datetime: $e');
       return dateTimeStr;
     }
   }
@@ -196,12 +246,12 @@ class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
       Map<String, dynamic> leave, AdminProvider adminProvider) {
     final employeeName = leave['user']?['name'] ?? 'Unknown';
     final employeeId = leave['user']?['employee_id'] ?? 'N/A';
-    final leaveType = leave['leave_type'] ?? 'Unknown';
+    final leaveType = leave['type_label'] ?? leave['type'] ?? 'Unknown';
     final startDate = leave['start_date'] ?? '';
     final endDate = leave['end_date'] ?? '';
     final status = leave['status'] ?? 'pending';
     final reason = leave['reason'] ?? '';
-    final adminNotes = leave['admin_notes'] ?? '';
+    final adminNotes = leave['manager_notes'] ?? '';
     final submittedAt = leave['created_at'] ?? '';
 
     Color statusColor = _getStatusColor(status);

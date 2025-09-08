@@ -574,7 +574,7 @@ class AdminController extends Controller
             
             $leave->update([
                 'status' => $request->status,
-                'admin_notes' => $request->admin_notes,
+                'manager_notes' => $request->admin_notes, // Map admin_notes to manager_notes
                 'approved_by' => auth()->id(),
                 'approved_at' => now(),
             ]);
