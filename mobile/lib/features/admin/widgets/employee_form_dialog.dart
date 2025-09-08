@@ -41,23 +41,186 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
     _isEditMode = widget.employee != null;
 
     if (_isEditMode) {
-      _populateFields();
+      _loadEmployeeData();
     } else {
       // Set default hire date to today for new employees
       _selectedHireDate = DateTime.now();
     }
   }
 
+  /// Load complete employee data for edit mode
+  Future<void> _loadEmployeeData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final employeeId = widget.employee!['id'];
+      print(
+          '🔍 Loading employee data for ID: $employeeId (type: ${employeeId.runtimeType})');
+
+      // For now, use the basic data from widget to avoid API issues
+      // TODO: Enable API call when backend is stable
+      print('⚠️ Using basic data from widget (API disabled temporarily)');
+      _populateFields();
+
+      /* 
+      // Ensure employeeId is int
+      final int id;
+      if (employeeId is int) {
+        id = employeeId;
+      } else if (employeeId is String) {
+        id = int.parse(employeeId);
+      } else {
+        throw Exception('Invalid employee ID type: ${employeeId.runtimeType}');
+      }
+
+      final employeeData = await widget.adminProvider.getEmployee(id);
+
+      if (employeeData != null) {
+        print('📊 Received employee data: $employeeData');
+        _populateFieldsWithData(employeeData);
+      } else {
+        // Fallback to basic data from widget if API fails
+        print('⚠️ API failed, using basic data from widget');
+        _populateFields();
+      }
+      */
+    } catch (e) {
+      print('❌ Error loading employee data: $e');
+      // Fallback to basic data from widget
+      _populateFields();
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Populate form fields with complete employee data from API
+  void _populateFieldsWithData(Map<String, dynamic> employee) {
+    try {
+      _nameController.text = employee['name']?.toString() ?? '';
+      _emailController.text = employee['email']?.toString() ?? '';
+      _phoneController.text = employee['phone']?.toString() ?? '';
+      _employeeIdController.text = employee['employee_code']?.toString() ??
+          employee['employee_id']?.toString() ??
+          '';
+      _addressController.text = employee['address']?.toString() ?? '';
+
+      // Debug print to see the actual employee data structure
+      print('🔍 Employee data structure: $employee');
+
+      // Set company, department, position using IDs from API with safe null checks
+      final companyId = employee['company_id']?.toString();
+      if (companyId != null &&
+          companyId.isNotEmpty &&
+          widget.adminProvider.companies.isNotEmpty &&
+          widget.adminProvider.companies
+              .any((c) => c['id']?.toString() == companyId)) {
+        _selectedCompany = companyId;
+      } else {
+        _selectedCompany = null;
+      }
+
+      final departmentId = employee['department_id']?.toString();
+      if (departmentId != null &&
+          departmentId.isNotEmpty &&
+          widget.adminProvider.departments.isNotEmpty &&
+          widget.adminProvider.departments
+              .any((d) => d['id']?.toString() == departmentId)) {
+        _selectedDepartment = departmentId;
+      } else {
+        _selectedDepartment = null;
+      }
+
+      final positionId = employee['position_id']?.toString();
+      if (positionId != null &&
+          positionId.isNotEmpty &&
+          widget.adminProvider.positions.isNotEmpty &&
+          widget.adminProvider.positions
+              .any((p) => p['id']?.toString() == positionId)) {
+        _selectedPosition = positionId;
+      } else {
+        _selectedPosition = null;
+      }
+
+      // Set status with safe conversion
+      try {
+        final status = employee['status']?.toString() ?? 'active';
+        _selectedStatus = status;
+      } catch (e) {
+        print('Error setting status: $e');
+        _selectedStatus = 'active';
+      }
+
+      // Set gender with safe conversion
+      try {
+        final gender = employee['gender']?.toString() ?? 'male';
+        _selectedGender = gender;
+      } catch (e) {
+        print('Error setting gender: $e');
+        _selectedGender = 'male';
+      }
+
+      // Parse dates with robust error handling
+      if (employee['birth_date'] != null) {
+        try {
+          final birthDateStr = employee['birth_date']?.toString();
+          if (birthDateStr != null && birthDateStr.isNotEmpty) {
+            _selectedBirthDate = DateTime.parse(birthDateStr);
+          }
+        } catch (e) {
+          print('Error parsing birth_date: $e');
+          _selectedBirthDate = null;
+        }
+      }
+
+      if (employee['hire_date'] != null || employee['join_date'] != null) {
+        try {
+          final hireDateStr = employee['hire_date']?.toString() ??
+              employee['join_date']?.toString();
+          if (hireDateStr != null && hireDateStr.isNotEmpty) {
+            _selectedHireDate = DateTime.parse(hireDateStr);
+          } else {
+            _selectedHireDate = DateTime.now();
+          }
+        } catch (e) {
+          print('Error parsing hire_date: $e');
+          _selectedHireDate = DateTime.now();
+        }
+      }
+    } catch (e) {
+      print('❌ Error in _populateFieldsWithData: $e');
+      // Fallback to basic population method
+      _populateFields();
+    }
+  }
+
   void _populateFields() {
     final employee = widget.employee!;
-    _nameController.text = employee['name'] ?? '';
-    _emailController.text = employee['email'] ?? '';
-    _phoneController.text = employee['phone'] ?? '';
-    _employeeIdController.text = employee['employee_id'] ?? '';
-    _addressController.text = employee['address'] ?? '';
 
-    // Safely set company, department, position with validation
-    final companyId = employee['company_id']?.toString();
+    // Handle both Indonesian and English field names for flexibility
+    _nameController.text = employee['nama'] ?? employee['name'] ?? '';
+    _emailController.text = employee['email'] ?? '';
+    _phoneController.text = employee['telepon'] ?? employee['phone'] ?? '';
+    _employeeIdController.text = employee['kode_karyawan'] ??
+        employee['employee_id'] ??
+        employee['employee_code'] ??
+        '';
+    _addressController.text = employee['alamat'] ?? employee['address'] ?? '';
+
+    // Debug print to see the actual employee data structure
+    print('🔍 Employee data structure: $employee');
+
+    // Handle company - check both formats
+    String? companyId;
+    if (employee['perusahaan'] != null && employee['perusahaan'] is Map) {
+      companyId = employee['perusahaan']['id']?.toString();
+    } else {
+      companyId = employee['company_id']?.toString();
+    }
+
     if (companyId != null &&
         widget.adminProvider.companies
             .any((c) => c['id'].toString() == companyId)) {
@@ -66,7 +229,14 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       _selectedCompany = null;
     }
 
-    final departmentId = employee['department_id']?.toString();
+    // Handle department - check both formats
+    String? departmentId;
+    if (employee['departemen'] != null && employee['departemen'] is Map) {
+      departmentId = employee['departemen']['id']?.toString();
+    } else {
+      departmentId = employee['department_id']?.toString();
+    }
+
     if (departmentId != null &&
         widget.adminProvider.departments
             .any((d) => d['id'].toString() == departmentId)) {
@@ -75,7 +245,14 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       _selectedDepartment = null;
     }
 
-    final positionId = employee['position_id']?.toString();
+    // Handle position - check both formats
+    String? positionId;
+    if (employee['posisi'] != null && employee['posisi'] is Map) {
+      positionId = employee['posisi']['id']?.toString();
+    } else {
+      positionId = employee['position_id']?.toString();
+    }
+
     if (positionId != null &&
         widget.adminProvider.positions
             .any((p) => p['id'].toString() == positionId)) {
@@ -84,44 +261,65 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       _selectedPosition = null;
     }
 
-    // Map database status to dropdown values
-    final dbStatus = employee['status'] ?? 'active';
-    switch (dbStatus.toLowerCase()) {
-      case 'active':
-      case 'aktif':
-        _selectedStatus = 'active';
-        break;
-      case 'inactive':
-      case 'tidak aktif':
-        _selectedStatus = 'inactive';
-        break;
-      case 'resigned':
-      case 'resign':
-        _selectedStatus = 'resigned';
-        break;
-      default:
-        _selectedStatus = 'active';
+    // Map database status to dropdown values - handle both formats
+    final dbStatus = employee['status'] ?? employee['is_active'] ?? 'active';
+    String statusValue = 'active';
+
+    if (dbStatus is bool) {
+      // Handle boolean is_active format
+      statusValue = dbStatus ? 'active' : 'inactive';
+    } else {
+      // Handle string status format
+      switch (dbStatus.toString().toLowerCase()) {
+        case 'active':
+        case 'aktif':
+        case 'true':
+          statusValue = 'active';
+          break;
+        case 'inactive':
+        case 'tidak aktif':
+        case 'false':
+          statusValue = 'inactive';
+          break;
+        case 'resigned':
+        case 'resign':
+          statusValue = 'resigned';
+          break;
+        default:
+          statusValue = 'active';
+      }
     }
+    _selectedStatus = statusValue;
 
     // Map database gender to dropdown values
-    final dbGender = employee['gender'] ?? 'male';
-    _selectedGender = (dbGender.toLowerCase() == 'female' ||
-            dbGender.toLowerCase() == 'perempuan')
+    final dbGender = employee['jenis_kelamin'] ?? employee['gender'] ?? 'male';
+    _selectedGender = (dbGender.toString().toLowerCase() == 'female' ||
+            dbGender.toString().toLowerCase() == 'perempuan')
         ? 'female'
         : 'male';
 
-    if (employee['birth_date'] != null) {
+    // Parse dates - handle both formats
+    if (employee['tanggal_lahir'] != null || employee['birth_date'] != null) {
       try {
-        _selectedBirthDate = DateTime.parse(employee['birth_date']);
+        final birthDateStr =
+            employee['tanggal_lahir'] ?? employee['birth_date'];
+        _selectedBirthDate = DateTime.parse(birthDateStr);
       } catch (e) {
+        print('Error parsing birth_date: $e');
         _selectedBirthDate = null;
       }
     }
 
-    if (employee['hire_date'] != null) {
+    if (employee['tanggal_bergabung'] != null ||
+        employee['hire_date'] != null ||
+        employee['join_date'] != null) {
       try {
-        _selectedHireDate = DateTime.parse(employee['hire_date']);
+        final hireDateStr = employee['tanggal_bergabung'] ??
+            employee['hire_date'] ??
+            employee['join_date'];
+        _selectedHireDate = DateTime.parse(hireDateStr);
       } catch (e) {
+        print('Error parsing hire_date: $e');
         _selectedHireDate = DateTime.now();
       }
     }
@@ -170,318 +368,380 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
 
             // Form
             Expanded(
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Basic Information
-                      const Text(
-                        'Informasi Dasar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nama Lengkap *',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Nama lengkap harus diisi';
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      TextFormField(
-                        controller: _employeeIdController,
-                        decoration: const InputDecoration(
-                          labelText: 'ID Karyawan *',
-                          border: OutlineInputBorder(),
-                          hintText: 'Contoh: EMP001',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'ID karyawan harus diisi';
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: const InputDecoration(
-                          labelText: 'Email *',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Email harus diisi';
-                          }
-                          if (!value.contains('@')) {
-                            return 'Format email tidak valid';
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      TextFormField(
-                        controller: _phoneController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nomor Telepon',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.phone,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Gender
-                      DropdownButtonFormField<String>(
-                        value: _selectedGender,
-                        decoration: const InputDecoration(
-                          labelText: 'Jenis Kelamin',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'male', child: Text('Laki-laki')),
-                          DropdownMenuItem(
-                              value: 'female', child: Text('Perempuan')),
+              child: _isLoading
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Memuat data karyawan...'),
                         ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedGender = value!;
-                          });
-                        },
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Birth Date
-                      InkWell(
-                        onTap: () => _selectBirthDate(context),
-                        child: InputDecorator(
-                          decoration: const InputDecoration(
-                            labelText: 'Tanggal Lahir',
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.calendar_today),
-                          ),
-                          child: Text(
-                            _selectedBirthDate != null
-                                ? '${_selectedBirthDate!.day}/${_selectedBirthDate!.month}/${_selectedBirthDate!.year}'
-                                : 'Pilih tanggal lahir',
-                            style: TextStyle(
-                              color: _selectedBirthDate != null
-                                  ? Colors.black
-                                  : Colors.grey.shade600,
+                    )
+                  : Form(
+                      key: _formKey,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Basic Information
+                            const Text(
+                              'Informasi Dasar',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
+                            const SizedBox(height: 16),
 
-                      const SizedBox(height: 16),
-
-                      TextFormField(
-                        controller: _addressController,
-                        decoration: const InputDecoration(
-                          labelText: 'Alamat',
-                          border: OutlineInputBorder(),
-                        ),
-                        maxLines: 2,
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Work Information
-                      const Text(
-                        'Informasi Pekerjaan',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Company Dropdown
-                      DropdownButtonFormField<String>(
-                        value: _selectedCompany,
-                        decoration: const InputDecoration(
-                          labelText: 'Perusahaan *',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('Pilih Perusahaan'),
-                          ),
-                          ...widget.adminProvider.companies
-                              .map((company) => DropdownMenuItem(
-                                    value: company['id'].toString(),
-                                    child: Text(company['name'] ?? 'Unknown'),
-                                  ))
-                              .toList(),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedCompany = value;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Department Dropdown
-                      DropdownButtonFormField<String>(
-                        value: _selectedDepartment,
-                        decoration: const InputDecoration(
-                          labelText: 'Departemen *',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('Pilih Departemen'),
-                          ),
-                          ...widget.adminProvider.departments
-                              .map((dept) => DropdownMenuItem(
-                                    value: dept['id'].toString(),
-                                    child: Text(dept['name'] ?? 'Unknown'),
-                                  ))
-                              .toList(),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedDepartment = value;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Position Dropdown
-                      DropdownButtonFormField<String>(
-                        value: _selectedPosition,
-                        decoration: const InputDecoration(
-                          labelText: 'Jabatan *',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('Pilih Jabatan'),
-                          ),
-                          ...widget.adminProvider.positions
-                              .map((pos) => DropdownMenuItem(
-                                    value: pos['id'].toString(),
-                                    child: Text(pos['name'] ?? 'Unknown'),
-                                  ))
-                              .toList(),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedPosition = value;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Hire Date
-                      InkWell(
-                        onTap: () => _selectHireDate(context),
-                        child: InputDecorator(
-                          decoration: const InputDecoration(
-                            labelText: 'Tanggal Bergabung *',
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.calendar_today),
-                          ),
-                          child: Text(
-                            _selectedHireDate != null
-                                ? '${_selectedHireDate!.day}/${_selectedHireDate!.month}/${_selectedHireDate!.year}'
-                                : 'Pilih tanggal bergabung',
-                            style: TextStyle(
-                              color: _selectedHireDate != null
-                                  ? Colors.black
-                                  : Colors.grey.shade600,
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Nama Lengkap *',
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Nama lengkap harus diisi';
+                                }
+                                return null;
+                              },
                             ),
-                          ),
+
+                            const SizedBox(height: 16),
+
+                            TextFormField(
+                              controller: _employeeIdController,
+                              decoration: const InputDecoration(
+                                labelText: 'ID Karyawan *',
+                                border: OutlineInputBorder(),
+                                hintText: 'Contoh: EMP001',
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'ID karyawan harus diisi';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            TextFormField(
+                              controller: _emailController,
+                              decoration: const InputDecoration(
+                                labelText: 'Email *',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Email harus diisi';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Format email tidak valid';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            TextFormField(
+                              controller: _phoneController,
+                              decoration: const InputDecoration(
+                                labelText: 'Nomor Telepon',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType: TextInputType.phone,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Gender
+                            DropdownButtonFormField<String>(
+                              value: _selectedGender,
+                              decoration: const InputDecoration(
+                                labelText: 'Jenis Kelamin',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'male', child: Text('Laki-laki')),
+                                DropdownMenuItem(
+                                    value: 'female', child: Text('Perempuan')),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedGender = value!;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Birth Date
+                            InkWell(
+                              onTap: () => _selectBirthDate(context),
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Tanggal Lahir',
+                                  border: OutlineInputBorder(),
+                                  suffixIcon: Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  _selectedBirthDate != null
+                                      ? '${_selectedBirthDate!.day}/${_selectedBirthDate!.month}/${_selectedBirthDate!.year}'
+                                      : 'Pilih tanggal lahir',
+                                  style: TextStyle(
+                                    color: _selectedBirthDate != null
+                                        ? Colors.black
+                                        : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            TextFormField(
+                              controller: _addressController,
+                              decoration: const InputDecoration(
+                                labelText: 'Alamat',
+                                border: OutlineInputBorder(),
+                              ),
+                              maxLines: 2,
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Work Information
+                            const Text(
+                              'Informasi Pekerjaan',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Company Dropdown
+                            DropdownButtonFormField<String>(
+                              value: _selectedCompany,
+                              decoration: const InputDecoration(
+                                labelText: 'Perusahaan *',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  child: Text('Pilih Perusahaan'),
+                                ),
+                                ...widget.adminProvider.companies
+                                    .map((company) => DropdownMenuItem(
+                                          value: company['id'].toString(),
+                                          child: Text(
+                                              company['name'] ?? 'Unknown'),
+                                        ))
+                                    .toList(),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedCompany = value;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Department Dropdown
+                            DropdownButtonFormField<String>(
+                              value: _selectedDepartment,
+                              decoration: const InputDecoration(
+                                labelText: 'Departemen *',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  child: Text('Pilih Departemen'),
+                                ),
+                                // Temporary static data while API is loading
+                                if (widget
+                                    .adminProvider.departments.isEmpty) ...[
+                                  const DropdownMenuItem(
+                                    value: '1',
+                                    child: Text('Teknologi Informasi'),
+                                  ),
+                                  const DropdownMenuItem(
+                                    value: '2',
+                                    child: Text('Human Resources'),
+                                  ),
+                                  const DropdownMenuItem(
+                                    value: '3',
+                                    child: Text('Marketing'),
+                                  ),
+                                  const DropdownMenuItem(
+                                    value: '4',
+                                    child: Text('Finance'),
+                                  ),
+                                  const DropdownMenuItem(
+                                    value: '5',
+                                    child: Text('Operations'),
+                                  ),
+                                ] else
+                                  ...widget.adminProvider.departments
+                                      .map((dept) => DropdownMenuItem(
+                                            value: dept['id'].toString(),
+                                            child:
+                                                Text(dept['name'] ?? 'Unknown'),
+                                          ))
+                                      .toList(),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedDepartment = value;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Position Dropdown
+                            DropdownButtonFormField<String>(
+                              value: _selectedPosition,
+                              decoration: const InputDecoration(
+                                labelText: 'Jabatan *',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  child: Text('Pilih Jabatan'),
+                                ),
+                                // Temporary static data while API is loading
+                                if (widget.adminProvider.positions.isEmpty) ...[
+                                  const DropdownMenuItem(
+                                    value: '1',
+                                    child: Text('Manager'),
+                                  ),
+                                  const DropdownMenuItem(
+                                    value: '2',
+                                    child: Text('Developer'),
+                                  ),
+                                  const DropdownMenuItem(
+                                    value: '3',
+                                    child: Text('Designer'),
+                                  ),
+                                  const DropdownMenuItem(
+                                    value: '4',
+                                    child: Text('Marketing'),
+                                  ),
+                                  const DropdownMenuItem(
+                                    value: '5',
+                                    child: Text('HR'),
+                                  ),
+                                ] else
+                                  ...widget.adminProvider.positions
+                                      .map((pos) => DropdownMenuItem(
+                                            value: pos['id'].toString(),
+                                            child:
+                                                Text(pos['name'] ?? 'Unknown'),
+                                          ))
+                                      .toList(),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedPosition = value;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Hire Date
+                            InkWell(
+                              onTap: () => _selectHireDate(context),
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Tanggal Bergabung *',
+                                  border: OutlineInputBorder(),
+                                  suffixIcon: Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  _selectedHireDate != null
+                                      ? '${_selectedHireDate!.day}/${_selectedHireDate!.month}/${_selectedHireDate!.year}'
+                                      : 'Pilih tanggal bergabung',
+                                  style: TextStyle(
+                                    color: _selectedHireDate != null
+                                        ? Colors.black
+                                        : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Status
+                            DropdownButtonFormField<String>(
+                              value: _selectedStatus,
+                              decoration: const InputDecoration(
+                                labelText: 'Status',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'active', child: Text('Aktif')),
+                                DropdownMenuItem(
+                                    value: 'inactive',
+                                    child: Text('Tidak Aktif')),
+                                DropdownMenuItem(
+                                    value: 'resigned', child: Text('Resign')),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedStatus = value!;
+                                });
+                              },
+                            ),
+
+                            // Password field for new employees
+                            if (!_isEditMode) ...[
+                              const SizedBox(height: 24),
+                              const Text(
+                                'Keamanan',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _passwordController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Password *',
+                                  border: OutlineInputBorder(),
+                                  hintText: 'Minimal 6 karakter',
+                                ),
+                                obscureText: true,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Password harus diisi';
+                                  }
+                                  if (value.length < 6) {
+                                    return 'Password minimal 6 karakter';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Status
-                      DropdownButtonFormField<String>(
-                        value: _selectedStatus,
-                        decoration: const InputDecoration(
-                          labelText: 'Status',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'active', child: Text('Aktif')),
-                          DropdownMenuItem(
-                              value: 'inactive', child: Text('Tidak Aktif')),
-                          DropdownMenuItem(
-                              value: 'resigned', child: Text('Resign')),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedStatus = value!;
-                          });
-                        },
-                      ),
-
-                      // Password field for new employees
-                      if (!_isEditMode) ...[
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Keamanan',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          decoration: const InputDecoration(
-                            labelText: 'Password *',
-                            border: OutlineInputBorder(),
-                            hintText: 'Minimal 6 karakter',
-                          ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Password harus diisi';
-                            }
-                            if (value.length < 6) {
-                              return 'Password minimal 6 karakter';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
+                    ),
             ),
 
             // Buttons
@@ -612,8 +872,20 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       'status': _selectedStatus,
     };
 
-    // Add password for new employees
-    if (!_isEditMode && _passwordController.text.isNotEmpty) {
+    // Add password for new employees (required for creation)
+    if (!_isEditMode) {
+      if (_passwordController.text.trim().isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password wajib diisi untuk karyawan baru'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
       employeeData['password'] = _passwordController.text.trim();
     }
 

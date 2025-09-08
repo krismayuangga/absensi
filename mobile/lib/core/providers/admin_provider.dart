@@ -440,6 +440,30 @@ class AdminProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Get employee by ID with complete data for editing
+  Future<Map<String, dynamic>?> getEmployee(int employeeId) async {
+    try {
+      print('🔍 AdminProvider: Getting employee data for ID: $employeeId');
+      final result = await _adminService.getEmployee(employeeId);
+      print('📊 AdminProvider: Employee result: $result');
+
+      if (result['success'] == true) {
+        final employeeData = result['data'];
+        print('📊 AdminProvider: Employee data: $employeeData');
+        return employeeData;
+      } else {
+        _errorMessage = result['message'] ?? 'Failed to get employee data';
+        notifyListeners();
+        return null;
+      }
+    } catch (e) {
+      print('❌ AdminProvider: Error getting employee: $e');
+      _errorMessage = 'Error getting employee: $e';
+      notifyListeners();
+      return null;
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

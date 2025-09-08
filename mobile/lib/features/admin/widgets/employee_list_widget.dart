@@ -138,14 +138,18 @@ class _EmployeeListWidgetState extends State<EmployeeListWidget> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                employee['name'] ?? '',
+                                                employee['nama'] ??
+                                                    employee['name'] ??
+                                                    '',
                                                 style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 16,
                                                 ),
                                               ),
                                               Text(
-                                                employee['employee_code'] ?? '',
+                                                employee['kode_karyawan'] ??
+                                                    employee['employee_code'] ??
+                                                    '',
                                                 style: const TextStyle(
                                                   color: Colors.grey,
                                                   fontSize: 12,
@@ -217,7 +221,8 @@ class _EmployeeListWidgetState extends State<EmployeeListWidget> {
                                       ],
                                     ),
 
-                                    if (employee['phone'] != null) ...[
+                                    if (employee['telepon'] != null ||
+                                        employee['phone'] != null) ...[
                                       const SizedBox(height: 4),
                                       Row(
                                         children: [
@@ -226,7 +231,9 @@ class _EmployeeListWidgetState extends State<EmployeeListWidget> {
                                               color: Colors.grey.shade600),
                                           const SizedBox(width: 6),
                                           Text(
-                                            employee['phone'] ?? '',
+                                            employee['telepon'] ??
+                                                employee['phone'] ??
+                                                '',
                                             style: TextStyle(
                                               color: Colors.grey.shade600,
                                               fontSize: 12,
@@ -243,19 +250,25 @@ class _EmployeeListWidgetState extends State<EmployeeListWidget> {
                                       spacing: 8,
                                       runSpacing: 4,
                                       children: [
-                                        if (employee['company'] != null)
+                                        if (employee['perusahaan'] != null)
                                           _buildChip(
-                                            employee['company']['name'],
+                                            employee['perusahaan']['nama']
+                                                    ?.toString() ??
+                                                'Unknown Company',
                                             Colors.blue,
                                           ),
-                                        if (employee['department'] != null)
+                                        if (employee['departemen'] != null)
                                           _buildChip(
-                                            employee['department']['name'],
+                                            employee['departemen']['nama']
+                                                    ?.toString() ??
+                                                'Unknown Department',
                                             Colors.green,
                                           ),
-                                        if (employee['position'] != null)
+                                        if (employee['posisi'] != null)
                                           _buildChip(
-                                            employee['position']['name'],
+                                            employee['posisi']['nama']
+                                                    ?.toString() ??
+                                                'Unknown Position',
                                             Colors.orange,
                                           ),
                                       ],
@@ -291,18 +304,23 @@ class _EmployeeListWidgetState extends State<EmployeeListWidget> {
                                         ),
                                         const SizedBox(width: 8),
                                         Expanded(
-                                          child: employee['hire_date'] != null
-                                              ? Text(
-                                                  'Bergabung: ${_formatDate(employee['hire_date'])}',
-                                                  style: TextStyle(
-                                                    color: Colors.grey.shade600,
-                                                    fontSize: 10,
-                                                  ),
-                                                  textAlign: TextAlign.end,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                )
-                                              : const SizedBox.shrink(),
+                                          child:
+                                              (employee['tanggal_bergabung'] !=
+                                                          null ||
+                                                      employee['hire_date'] !=
+                                                          null)
+                                                  ? Text(
+                                                      'Bergabung: ${_formatDate(employee['tanggal_bergabung'] ?? employee['hire_date'])}',
+                                                      style: TextStyle(
+                                                        color: Colors
+                                                            .grey.shade600,
+                                                        fontSize: 10,
+                                                      ),
+                                                      textAlign: TextAlign.end,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    )
+                                                  : const SizedBox.shrink(),
                                         ),
                                       ],
                                     ),
@@ -385,7 +403,8 @@ class _EmployeeListWidgetState extends State<EmployeeListWidget> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Employee'),
-        content: Text('Are you sure you want to delete ${employee['name']}?'),
+        content: Text(
+            'Are you sure you want to delete ${employee['nama'] ?? employee['name']}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

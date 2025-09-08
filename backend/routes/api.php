@@ -213,6 +213,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
             Route::get('dashboard/stats', [AdminController::class, 'getDashboardStats']);
             Route::get('dashboard/attendance-detail', [AdminController::class, 'getDetailedAttendanceReport']);
             Route::get('employees', [AdminController::class, 'getEmployees']);
+            Route::get('employees/{id}', [AdminController::class, 'getEmployee']);
             Route::post('employees', [AdminController::class, 'createEmployee']);
             Route::put('employees/{id}', [AdminController::class, 'updateEmployee']);
             Route::delete('employees/{id}', [AdminController::class, 'deleteEmployee']);

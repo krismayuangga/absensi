@@ -256,20 +256,40 @@ class AdminController extends Controller
             
             $employees = $query->paginate($perPage);
             
-            // Transform the data to match expected format - Bahasa Indonesia
+            // Transform the data to match expected format - Bahasa Indonesia for display, but include raw data for editing
             $transformedData = $employees->getCollection()->map(function ($employee) {
+                // Get department and position IDs from names
+                $department = \DB::table('departments')->where('name', $employee->department)->first();
+                $position = \DB::table('positions')->where('name', $employee->position)->first();
+                
                 return [
                     'id' => $employee->id,
                     'nama' => $employee->name,
+                    'name' => $employee->name, // Include for edit compatibility
                     'email' => $employee->email,
                     'kode_karyawan' => $employee->employee_code,
+                    'employee_id' => $employee->employee_code, // Include for edit compatibility
+                    'employee_code' => $employee->employee_code, // Include for edit compatibility
                     'telepon' => $employee->phone,
+                    'phone' => $employee->phone, // Include for edit compatibility
                     'tanggal_bergabung' => $employee->join_date ? Carbon::parse($employee->join_date)->format('d/m/Y') : '-',
+                    'join_date' => $employee->join_date, // Raw date for edit
+                    'hire_date' => $employee->join_date, // Include for edit compatibility
                     'status' => $employee->status ? 'Aktif' : 'Non-Aktif',
+                    'is_active' => $employee->status, // Include for edit compatibility
                     'gaji' => 0, // Default value
                     'perusahaan' => ['id' => $employee->company_id ?? 1, 'nama' => 'PT. Kinerja Absensi'],
-                    'departemen' => ['id' => 1, 'nama' => $employee->department ?? 'IT Department'],
-                    'posisi' => ['id' => 1, 'nama' => $employee->position ?? 'Staff'],
+                    'company_id' => $employee->company_id, // Include for edit compatibility
+                    'departemen' => ['id' => $department ? $department->id : 1, 'nama' => $employee->department ?? 'IT Department'],
+                    'department_id' => $department ? $department->id : null, // Real department ID
+                    'department' => $employee->department, // Include for edit compatibility
+                    'posisi' => ['id' => $position ? $position->id : 1, 'nama' => $employee->position ?? 'Staff'],
+                    'position_id' => $position ? $position->id : null, // Real position ID
+                    'position' => $employee->position, // Include for edit compatibility
+                    // Add missing fields for edit
+                    'address' => null, // Default, will be fetched from full user record if needed
+                    'gender' => null, // Default, will be fetched from full user record if needed
+                    'birth_date' => null, // Default, will be fetched from full user record if needed
                 ];
             });
             
@@ -568,6 +588,54 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => 'Error updating leave request: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Get employee by ID with complete data for editing
+     */
+    public function getEmployee($id)
+    {
+        try {
+            $employee = User::where('role', 'employee')->findOrFail($id);
+            
+            // Get department and position IDs from names
+            $department = \DB::table('departments')->where('name', $employee->department)->first();
+            $position = \DB::table('positions')->where('name', $employee->position)->first();
+            
+            $employeeData = [
+                'id' => $employee->id,
+                'name' => $employee->name,
+                'email' => $employee->email,
+                'phone' => $employee->phone,
+                'employee_id' => $employee->employee_id,
+                'employee_code' => $employee->employee_id,
+                'address' => $employee->address,
+                'gender' => $employee->gender,
+                'birth_date' => $employee->birth_date,
+                'hire_date' => $employee->join_date,
+                'join_date' => $employee->join_date,
+                'company_id' => $employee->company_id,
+                'department_id' => $department ? $department->id : null,
+                'position_id' => $position ? $position->id : null,
+                'department' => $employee->department,
+                'position' => $employee->position,
+                'status' => $employee->status,
+                'is_active' => $employee->is_active,
+                'salary' => $employee->salary,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data karyawan berhasil dimuat',
+                'data' => $employeeData,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data karyawan: ' . $e->getMessage(),
+            ], 404);
         }
     }
 

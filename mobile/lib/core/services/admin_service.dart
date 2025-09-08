@@ -391,4 +391,42 @@ class AdminService {
       };
     }
   }
+
+  /// Get employee by ID with complete data for editing
+  Future<Map<String, dynamic>> getEmployee(int employeeId) async {
+    try {
+      _addAuthToken();
+
+      print('🔍 Fetching employee data for ID: $employeeId');
+      final response = await _dio.get('/admin/employees/$employeeId');
+      print('📊 Employee response status: ${response.statusCode}');
+      print('📊 Employee response: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': response.data['data'],
+        };
+      }
+
+      return {
+        'success': false,
+        'message': response.data['message'] ?? 'Failed to get employee data',
+      };
+    } catch (e) {
+      print('❌ Error getting employee data: $e');
+      if (e is DioException && e.response != null) {
+        print('❌ DioException response: ${e.response?.data}');
+        return {
+          'success': false,
+          'message':
+              e.response?.data['message'] ?? 'Failed to get employee data',
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
 }
