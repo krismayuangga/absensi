@@ -243,7 +243,8 @@ class AdminController extends Controller
                 ->select([
                     'id', 'name', 'email', 'employee_id as employee_code', 
                     'phone', 'join_date', 'is_active as status',
-                    'company_id', 'department', 'position'
+                    'company_id', 'department', 'position',
+                    'address', 'birth_date', 'gender' // Add missing fields
                 ]);
             
             if ($search) {
@@ -286,10 +287,13 @@ class AdminController extends Controller
                     'posisi' => ['id' => $position ? $position->id : 1, 'nama' => $employee->position ?? 'Staff'],
                     'position_id' => $position ? $position->id : null, // Real position ID
                     'position' => $employee->position, // Include for edit compatibility
-                    // Add missing fields for edit
-                    'address' => null, // Default, will be fetched from full user record if needed
-                    'gender' => null, // Default, will be fetched from full user record if needed
-                    'birth_date' => null, // Default, will be fetched from full user record if needed
+                    // Add real fields for edit
+                    'address' => $employee->address, // Real address data
+                    'alamat' => $employee->address, // Indonesian version
+                    'gender' => $employee->gender, // Real gender data
+                    'jenis_kelamin' => $employee->gender, // Indonesian version
+                    'birth_date' => $employee->birth_date, // Real birth date
+                    'tanggal_lahir' => $employee->birth_date, // Indonesian version
                 ];
             });
             

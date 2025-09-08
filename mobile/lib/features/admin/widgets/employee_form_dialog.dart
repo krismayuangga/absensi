@@ -59,33 +59,33 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       print(
           '🔍 Loading employee data for ID: $employeeId (type: ${employeeId.runtimeType})');
 
-      // For now, use the basic data from widget to avoid API issues
-      // TODO: Enable API call when backend is stable
-      print('⚠️ Using basic data from widget (API disabled temporarily)');
-      _populateFields();
+      // Use API call now that backend is stable
+      try {
+        // Ensure employeeId is int
+        final int id;
+        if (employeeId is int) {
+          id = employeeId;
+        } else if (employeeId is String) {
+          id = int.parse(employeeId);
+        } else {
+          throw Exception(
+              'Invalid employee ID type: ${employeeId.runtimeType}');
+        }
 
-      /* 
-      // Ensure employeeId is int
-      final int id;
-      if (employeeId is int) {
-        id = employeeId;
-      } else if (employeeId is String) {
-        id = int.parse(employeeId);
-      } else {
-        throw Exception('Invalid employee ID type: ${employeeId.runtimeType}');
-      }
+        final employeeData = await widget.adminProvider.getEmployee(id);
 
-      final employeeData = await widget.adminProvider.getEmployee(id);
-
-      if (employeeData != null) {
-        print('📊 Received employee data: $employeeData');
-        _populateFieldsWithData(employeeData);
-      } else {
-        // Fallback to basic data from widget if API fails
-        print('⚠️ API failed, using basic data from widget');
+        if (employeeData != null) {
+          print('📊 Received employee data: $employeeData');
+          _populateFieldsWithData(employeeData);
+        } else {
+          // Fallback to basic data from widget if API fails
+          print('⚠️ API failed, using basic data from widget');
+          _populateFields();
+        }
+      } catch (e) {
+        print('❌ API error, using basic data from widget: $e');
         _populateFields();
       }
-      */
     } catch (e) {
       print('❌ Error loading employee data: $e');
       // Fallback to basic data from widget
