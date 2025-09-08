@@ -579,7 +579,7 @@ class AdminController extends Controller
                 'approved_at' => now(),
             ]);
 
-            $leave->load(['user:id,name,employee_code']);
+            $leave->load(['user:id,name,employee_id']);
 
             return response()->json([
                 'success' => true,

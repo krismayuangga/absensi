@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../../core/providers/admin_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -177,6 +178,11 @@ class _AttendanceManagementWidgetState
     final clockOut = attendance['clock_out_time'] ?? '';
     final status = attendance['status'] ?? 'Unknown';
 
+    // Format date and time for better display
+    String formattedDate = _formatDate(date);
+    String formattedClockIn = _formatTime(clockIn);
+    String formattedClockOut = clockOut.isEmpty ? '-' : _formatTime(clockOut);
+
     Color statusColor = _getStatusColor(status);
 
     return Card(
@@ -242,12 +248,12 @@ class _AttendanceManagementWidgetState
             Row(
               children: [
                 Expanded(
-                  child: _buildTimeInfo('Masuk', clockIn, Icons.login),
+                  child: _buildTimeInfo('Masuk', formattedClockIn, Icons.login),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: _buildTimeInfo('Keluar',
-                      clockOut.isEmpty ? '-' : clockOut, Icons.logout),
+                  child:
+                      _buildTimeInfo('Keluar', formattedClockOut, Icons.logout),
                 ),
               ],
             ),
@@ -258,7 +264,7 @@ class _AttendanceManagementWidgetState
                     size: 14, color: Colors.grey.shade600),
                 const SizedBox(width: 4),
                 Text(
-                  date,
+                  formattedDate,
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
               ],
@@ -270,33 +276,44 @@ class _AttendanceManagementWidgetState
   }
 
   Widget _buildTimeInfo(String label, String time, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey.shade600),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey.shade600),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-              Text(
-                time,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                const SizedBox(height: 2),
+                Text(
+                  time,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -342,5 +359,38 @@ class _AttendanceManagementWidgetState
       date: _selectedDate,
       status: _selectedStatus == 'Semua' ? null : _selectedStatus,
     );
+  }
+
+  /// Format date string to human readable format
+  String _formatDate(String dateStr) {
+    if (dateStr.isEmpty) return '-';
+    try {
+      DateTime date = DateTime.parse(dateStr);
+      return DateFormat('dd MMM yyyy', 'id_ID').format(date);
+    } catch (e) {
+      return dateStr; // Return original if parsing fails
+    }
+  }
+
+  /// Format time string to human readable format
+  String _formatTime(String timeStr) {
+    if (timeStr.isEmpty) return '-';
+    try {
+      // Handle different time formats
+      if (timeStr.contains('T')) {
+        // ISO format: 2025-09-08T05:22:00.000000Z
+        DateTime dateTime = DateTime.parse(timeStr);
+        return DateFormat('HH:mm').format(dateTime);
+      } else if (timeStr.contains(':')) {
+        // Time only format: 08:30:00 or 08:30
+        List<String> parts = timeStr.split(':');
+        if (parts.length >= 2) {
+          return '${parts[0]}:${parts[1]}';
+        }
+      }
+      return timeStr; // Return original if no known format
+    } catch (e) {
+      return timeStr; // Return original if parsing fails
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../../core/providers/admin_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -12,6 +13,50 @@ class LeaveManagementWidget extends StatefulWidget {
 
 class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
   String _selectedStatus = 'Semua';
+
+  // Helper function to format date range
+  String _formatDateRange(String startDate, String endDate) {
+    try {
+      // Handle different date formats from backend
+      DateTime start, end;
+
+      // Try parsing ISO format first (e.g., "2025-09-08T17:00:00.000000Z")
+      if (startDate.contains('T')) {
+        start = DateTime.parse(startDate);
+        end = DateTime.parse(endDate);
+      } else {
+        // Parse simple date format (e.g., "2025-09-08")
+        final DateFormat inputFormat = DateFormat('yyyy-MM-dd');
+        start = inputFormat.parse(startDate);
+        end = inputFormat.parse(endDate);
+      }
+
+      final DateFormat outputFormat = DateFormat('d MMM yyyy', 'id_ID');
+
+      if (start.year == end.year &&
+          start.month == end.month &&
+          start.day == end.day) {
+        return outputFormat.format(start);
+      } else {
+        return '${outputFormat.format(start)} - ${outputFormat.format(end)}';
+      }
+    } catch (e) {
+      // Fallback to original format if parsing fails
+      return startDate == endDate ? startDate : '$startDate s/d $endDate';
+    }
+  } // Helper function to format datetime
+
+  String _formatDateTime(String? dateTimeStr) {
+    if (dateTimeStr == null) return 'Belum diketahui';
+
+    try {
+      final DateTime dateTime = DateTime.parse(dateTimeStr);
+      final DateFormat formatter = DateFormat('d MMM yyyy, HH:mm', 'id_ID');
+      return formatter.format(dateTime);
+    } catch (e) {
+      return dateTimeStr;
+    }
+  }
 
   @override
   void initState() {
@@ -207,7 +252,7 @@ class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -239,9 +284,12 @@ class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
                       Icon(Icons.category,
                           size: 16, color: Colors.grey.shade600),
                       const SizedBox(width: 6),
-                      Text(
-                        'Jenis Cuti: $leaveType',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      Expanded(
+                        child: Text(
+                          'Jenis Cuti: $leaveType',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -251,7 +299,30 @@ class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
                       Icon(Icons.date_range,
                           size: 16, color: Colors.grey.shade600),
                       const SizedBox(width: 6),
-                      Text('$startDate s/d $endDate'),
+                      Expanded(
+                        child: Text(
+                          _formatDateRange(startDate, endDate),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time,
+                          size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Diajukan: ${_formatDateTime(submittedAt)}',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   if (reason.isNotEmpty) ...[
@@ -440,7 +511,10 @@ class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
               ),
               child: Text(action == 'approved' ? 'Setujui' : 'Tolak'),
               onPressed: () async {
-                Navigator.of(context).pop();
+                final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                navigator.pop();
 
                 final success = await adminProvider.updateLeaveStatus(
                   leaveId,
@@ -451,7 +525,7 @@ class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
                 );
 
                 if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text(
                         'Pengajuan cuti berhasil ${action == 'approved' ? 'disetujui' : 'ditolak'}',
@@ -461,7 +535,7 @@ class _LeaveManagementWidgetState extends State<LeaveManagementWidget> {
                     ),
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text(
                           adminProvider.errorMessage ?? 'Terjadi kesalahan'),
