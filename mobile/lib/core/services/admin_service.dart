@@ -360,7 +360,10 @@ class AdminService {
     try {
       _addAuthToken();
 
+      print('🔍 Calling master data API: /admin/master-data');
       final response = await _dio.get('/admin/master-data');
+      print('📊 Master data response status: ${response.statusCode}');
+      print('📊 Master data response: ${response.data}');
 
       if (response.statusCode == 200) {
         return {
@@ -376,6 +379,7 @@ class AdminService {
     } catch (e) {
       print('❌ Error getting master data: $e');
       if (e is DioException && e.response != null) {
+        print('❌ DioException response: ${e.response?.data}');
         return {
           'success': false,
           'message': e.response?.data['message'] ?? 'Failed to get master data',

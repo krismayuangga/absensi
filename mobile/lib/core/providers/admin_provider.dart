@@ -357,14 +357,18 @@ class AdminProvider extends ChangeNotifier {
   // Master data methods
   Future<void> loadMasterData() async {
     try {
+      print('🔍 Loading master data...');
       final result = await _adminService.getMasterData();
+      print('📊 Master data result: $result');
 
       if (result['success'] == true) {
         final data = result['data'];
+        print('📊 Master data content: $data');
 
         // Safe parsing for companies
         _companies = [];
         final companiesData = data?['companies'];
+        print('🏢 Companies data: $companiesData');
         if (companiesData is List) {
           for (var item in companiesData) {
             if (item is Map<String, dynamic>) {
@@ -372,10 +376,12 @@ class AdminProvider extends ChangeNotifier {
             }
           }
         }
+        print('🏢 Parsed companies: $_companies');
 
         // Safe parsing for departments
         _departments = [];
         final departmentsData = data?['departments'];
+        print('🏬 Departments data: $departmentsData');
         if (departmentsData is List) {
           for (var item in departmentsData) {
             if (item is Map<String, dynamic>) {
@@ -383,10 +389,12 @@ class AdminProvider extends ChangeNotifier {
             }
           }
         }
+        print('🏬 Parsed departments: $_departments');
 
         // Safe parsing for positions
         _positions = [];
         final positionsData = data?['positions'];
+        print('👥 Positions data: $positionsData');
         if (positionsData is List) {
           for (var item in positionsData) {
             if (item is Map<String, dynamic>) {
@@ -394,13 +402,18 @@ class AdminProvider extends ChangeNotifier {
             }
           }
         }
+        print('👥 Parsed positions: $_positions');
 
         _errorMessage = null;
         notifyListeners();
+        print(
+            '✅ Master data loaded successfully! Companies: ${_companies.length}, Departments: ${_departments.length}, Positions: ${_positions.length}');
       } else {
+        print('❌ Failed to load master data: ${result['message']}');
         _errorMessage = result['message'] ?? 'Failed to load master data';
       }
     } catch (e) {
+      print('❌ Exception loading master data: $e');
       _errorMessage = 'Error: $e';
       debugPrint('Error loading master data: $e');
     }

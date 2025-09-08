@@ -13,6 +13,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Run master data seeders first
+        $this->call([
+            CompanySeeder::class,
+            DepartmentSeeder::class,
+            PositionSeeder::class,
+        ]);
+
         // Create admin user
         User::factory()->create([
             'name' => 'Admin User',

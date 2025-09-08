@@ -305,13 +305,16 @@ class AdminController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email',
                 'phone' => 'nullable|string|max:20',
-                'employee_code' => 'required|string|unique:users,employee_code',
+                'employee_code' => 'required|string|unique:users,employee_id', // Map to employee_id column
                 'company_id' => 'required|exists:companies,id',
                 'department_id' => 'required|exists:departments,id',
                 'position_id' => 'required|exists:positions,id',
                 'hire_date' => 'required|date',
                 'salary' => 'nullable|numeric|min:0',
                 'password' => 'required|string|min:6',
+                'gender' => 'nullable|in:male,female',
+                'birth_date' => 'nullable|date',
+                'address' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
@@ -322,27 +325,33 @@ class AdminController extends Controller
                 ], 422);
             }
 
+            // Get department and position names from their IDs
+            $department = \DB::table('departments')->where('id', $request->department_id)->first();
+            $position = \DB::table('positions')->where('id', $request->position_id)->first();
+
             $employee = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
-                'employee_code' => $request->employee_code,
+                'employee_id' => $request->employee_code, // Map employee_code to employee_id column
                 'company_id' => $request->company_id,
-                'department_id' => $request->department_id,
-                'position_id' => $request->position_id,
-                'hire_date' => $request->hire_date,
+                'department' => $department ? $department->name : null, // Store department name
+                'position' => $position ? $position->name : null, // Store position name
+                'join_date' => $request->hire_date, // Map hire_date to join_date column
                 'salary' => $request->salary,
                 'role' => 'employee',
                 'status' => 'active',
                 'password' => Hash::make($request->password),
+                'gender' => $request->gender,
+                'birth_date' => $request->birth_date,
+                'address' => $request->address,
+                'is_active' => true,
             ]);
-
-            $employee->load(['company:id,name', 'department:id,name', 'position:id,name']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Employee created successfully',
-                'data' => $employee,
+                'data' => $employee->fresh(),
             ], 201);
 
         } catch (\Exception $e) {
@@ -365,13 +374,16 @@ class AdminController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email,' . $id,
                 'phone' => 'nullable|string|max:20',
-                'employee_code' => 'required|string|unique:users,employee_code,' . $id,
+                'employee_code' => 'required|string|unique:users,employee_id,' . $id, // Map to employee_id column
                 'company_id' => 'required|exists:companies,id',
-                'department_id' => 'required|exists:departments,id',
-                'position_id' => 'required|exists:positions,id',
+                'department_id' => 'required|exists:departments,id', // Will map to department field 
+                'position_id' => 'required|exists:positions,id', // Will map to position field
                 'hire_date' => 'required|date',
                 'salary' => 'nullable|numeric|min:0',
                 'status' => 'required|in:active,inactive',
+                'gender' => 'nullable|in:male,female',
+                'birth_date' => 'nullable|date',
+                'address' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
@@ -382,17 +394,32 @@ class AdminController extends Controller
                 ], 422);
             }
 
-            $employee->update($request->only([
-                'name', 'email', 'phone', 'employee_code', 'company_id',
-                'department_id', 'position_id', 'hire_date', 'salary', 'status'
-            ]));
+            // Get department and position names from their IDs
+            $department = \DB::table('departments')->where('id', $request->department_id)->first();
+            $position = \DB::table('positions')->where('id', $request->position_id)->first();
 
-            $employee->load(['company:id,name', 'department:id,name', 'position:id,name']);
+            $updateData = [
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'employee_id' => $request->employee_code, // Map employee_code to employee_id column
+                'company_id' => $request->company_id,
+                'department' => $department ? $department->name : null, // Store department name
+                'position' => $position ? $position->name : null, // Store position name
+                'join_date' => $request->hire_date, // Map hire_date to join_date column
+                'salary' => $request->salary,
+                'status' => $request->status,
+                'gender' => $request->gender,
+                'birth_date' => $request->birth_date,
+                'address' => $request->address,
+            ];
+
+            $employee->update($updateData);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Employee updated successfully',
-                'data' => $employee,
+                'data' => $employee->fresh(),
             ]);
 
         } catch (\Exception $e) {
@@ -550,37 +577,32 @@ class AdminController extends Controller
     public function getMasterData()
     {
         try {
-            // Real data from database or reasonable defaults - Bahasa Indonesia
-            $companies = [
-                ['id' => 1, 'nama' => 'PT. Kinerja Absensi'],
-                ['id' => 2, 'nama' => 'Cabang Jakarta'],
-                ['id' => 3, 'nama' => 'Cabang Bandung'],
-            ];
+            // Get real data from database
+            $companies = \DB::table('companies')
+                ->where('is_active', true)
+                ->select('id', 'name')
+                ->get()
+                ->toArray();
             
-            $departments = [
-                ['id' => 1, 'nama' => 'Teknologi Informasi'],
-                ['id' => 2, 'nama' => 'Sumber Daya Manusia'],
-                ['id' => 3, 'nama' => 'Keuangan'],
-                ['id' => 4, 'nama' => 'Pemasaran'],
-                ['id' => 5, 'nama' => 'Operasional'],
-            ];
+            $departments = \DB::table('departments')
+                ->where('is_active', true)
+                ->select('id', 'name', 'company_id')
+                ->get()
+                ->toArray();
             
-            $positions = [
-                ['id' => 1, 'nama' => 'Manajer'],
-                ['id' => 2, 'nama' => 'Senior Developer'],
-                ['id' => 3, 'nama' => 'Developer'],
-                ['id' => 4, 'nama' => 'Staff'],
-                ['id' => 5, 'nama' => 'Magang'],
-                ['id' => 6, 'nama' => 'System Administrator'],
-            ];
+            $positions = \DB::table('positions')
+                ->where('is_active', true)
+                ->select('id', 'name', 'department_id')
+                ->get()
+                ->toArray();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data master berhasil dimuat',
                 'data' => [
-                    'perusahaan' => $companies,
-                    'departemen' => $departments,
-                    'posisi' => $positions,
+                    'companies' => $companies,
+                    'departments' => $departments,
+                    'positions' => $positions,
                 ],
             ]);
 
