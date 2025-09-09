@@ -104,7 +104,7 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
               padding: EdgeInsets.all(16.w),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.9,
+                childAspectRatio: 1.0,
                 crossAxisSpacing: 12.w,
                 mainAxisSpacing: 12.h,
               ),
@@ -227,7 +227,7 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
             // Content
             Expanded(
               child: Padding(
-                padding: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -235,66 +235,60 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
                     Text(
                       title,
                       style: GoogleFonts.poppins(
-                        fontSize: 13.sp,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                         color: theme.textTheme.bodyLarge?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (description.isNotEmpty) ...[
-                      SizedBox(height: 2.h),
+                    SizedBox(height: 2.h),
+                    if (description.isNotEmpty)
                       Text(
                         description,
                         style: GoogleFonts.inter(
-                          fontSize: 11.sp,
+                          fontSize: 10.sp,
                           color: theme.textTheme.bodyMedium?.color,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ],
                     const Spacer(),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 10.w,
-                          color: Colors.grey.shade500,
-                        ),
-                        SizedBox(width: 2.w),
                         Expanded(
-                          child: Text(
-                            createdAt,
-                            style: GoogleFonts.inter(
-                              fontSize: 9.sp,
-                              color: Colors.grey.shade500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 9.w,
+                                color: Colors.grey.shade500,
+                              ),
+                              SizedBox(width: 2.w),
+                              Expanded(
+                                child: Text(
+                                  createdAt,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 8.sp,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                    if (formattedSize.isNotEmpty) ...[
-                      SizedBox(height: 2.h),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.storage,
-                            size: 10.w,
-                            color: Colors.grey.shade500,
-                          ),
-                          SizedBox(width: 2.w),
+                        if (formattedSize.isNotEmpty)
                           Text(
                             formattedSize,
                             style: GoogleFonts.inter(
-                              fontSize: 9.sp,
+                              fontSize: 8.sp,
                               color: Colors.grey.shade500,
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ],
                 ),
               ),
