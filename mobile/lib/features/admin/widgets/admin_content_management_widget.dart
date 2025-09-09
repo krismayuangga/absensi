@@ -50,8 +50,12 @@ class _AdminContentManagementWidgetState
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
             tabs: const [
-              Tab(text: 'Kelola Pengumuman', icon: Icon(Icons.campaign)),
-              Tab(text: 'Kelola Media', icon: Icon(Icons.photo_library)),
+              Tab(
+                  text: 'Kelola Pengumuman',
+                  icon: Icon(Icons.campaign, size: 20)),
+              Tab(
+                  text: 'Kelola Media',
+                  icon: Icon(Icons.photo_library, size: 20)),
             ],
           ),
         ),
@@ -79,204 +83,298 @@ class AnnouncementManagementTab extends StatefulWidget {
 }
 
 class _AnnouncementManagementTabState extends State<AnnouncementManagementTab> {
-  final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
-  String _selectedCategory = 'general';
-  String _selectedPriority = 'medium';
-
-  final List<String> _categories = ['general', 'urgent', 'info', 'event'];
-  final List<String> _priorities = ['low', 'medium', 'high', 'urgent'];
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<AdminContentProvider>(
       builder: (context, provider, child) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Form untuk membuat pengumuman baru
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Buat Pengumuman Baru',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+        return Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header dengan tombol tambah
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Pengumuman Terbaru',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Judul Pengumuman',
-                          border: OutlineInputBorder(),
-                        ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => _showCreateAnnouncementModal(context),
+                      icon:
+                          const Icon(Icons.add, color: Colors.white, size: 18),
+                      label: const Text('Buat',
+                          style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                       ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _contentController,
-                        maxLines: 4,
-                        decoration: const InputDecoration(
-                          labelText: 'Isi Pengumuman',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: _selectedCategory,
-                              decoration: const InputDecoration(
-                                labelText: 'Kategori',
-                                border: OutlineInputBorder(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Daftar pengumuman yang sudah ada
+                Expanded(
+                  child: provider.announcements.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.campaign_outlined,
+                                  size: 64, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text(
+                                'Belum ada pengumuman',
+                                style:
+                                    TextStyle(color: Colors.grey, fontSize: 16),
                               ),
-                              items: _categories.map((category) {
-                                return DropdownMenuItem(
-                                  value: category,
-                                  child: Text(category.toUpperCase()),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedCategory = value!;
-                                });
-                              },
-                            ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: _selectedPriority,
-                              decoration: const InputDecoration(
-                                labelText: 'Prioritas',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: _priorities.map((priority) {
-                                return DropdownMenuItem(
-                                  value: priority,
-                                  child: Text(priority.toUpperCase()),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedPriority = value!;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed:
-                              provider.isLoading ? null : _createAnnouncement,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: provider.isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white)
-                              : const Text(
-                                  'Publikasikan Pengumuman',
-                                  style: TextStyle(color: Colors.white),
+                        )
+                      : ListView.builder(
+                          itemCount: provider.announcements.length,
+                          itemBuilder: (context, index) {
+                            final announcement = provider.announcements[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              elevation: 2,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.all(16),
+                                title: Text(
+                                  announcement['title'] ?? '',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
                                 ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      announcement['content'] ?? '',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Chip(
+                                          label: Text(
+                                            announcement['category']
+                                                    ?.toString()
+                                                    .toUpperCase() ??
+                                                '',
+                                            style:
+                                                const TextStyle(fontSize: 10),
+                                          ),
+                                          backgroundColor: AppTheme.primaryColor
+                                              .withOpacity(0.1),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Chip(
+                                          label: Text(
+                                            announcement['priority']
+                                                    ?.toString()
+                                                    .toUpperCase() ??
+                                                '',
+                                            style:
+                                                const TextStyle(fontSize: 10),
+                                          ),
+                                          backgroundColor: _getPriorityColor(
+                                              announcement['priority']),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () =>
+                                      _deleteAnnouncement(announcement['id']),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      ),
-                    ],
-                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              // Daftar pengumuman yang sudah ada
-              const Text(
-                'Pengumuman Terbaru',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: provider.announcements.isEmpty
-                    ? const Center(
-                        child: Text('Belum ada pengumuman'),
-                      )
-                    : ListView.builder(
-                        itemCount: provider.announcements.length,
-                        itemBuilder: (context, index) {
-                          final announcement = provider.announcements[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              title: Text(
-                                announcement['title'] ?? '',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(announcement['content'] ?? ''),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Chip(
-                                        label: Text(
-                                          announcement['category']
-                                                  ?.toString()
-                                                  .toUpperCase() ??
-                                              '',
-                                          style: const TextStyle(fontSize: 10),
-                                        ),
-                                        backgroundColor: AppTheme.primaryColor
-                                            .withOpacity(0.1),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Chip(
-                                        label: Text(
-                                          announcement['priority']
-                                                  ?.toString()
-                                                  .toUpperCase() ??
-                                              '',
-                                          style: const TextStyle(fontSize: 10),
-                                        ),
-                                        backgroundColor: _getPriorityColor(
-                                            announcement['priority']),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              trailing: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () =>
-                                    _deleteAnnouncement(announcement['id']),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
+              ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  // Modal untuk membuat pengumuman baru
+  void _showCreateAnnouncementModal(BuildContext context) {
+    final titleController = TextEditingController();
+    final contentController = TextEditingController();
+    String selectedCategory = 'general';
+    String selectedPriority = 'medium';
+
+    final categories = ['general', 'urgent', 'info', 'event'];
+    final priorities = ['low', 'medium', 'high', 'urgent'];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                constraints: const BoxConstraints(maxHeight: 500),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.campaign, color: Colors.blue),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Buat Pengumuman Baru',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Judul Pengumuman',
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: contentController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Isi Pengumuman',
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: selectedCategory,
+                            decoration: const InputDecoration(
+                              labelText: 'Kategori',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                            ),
+                            items: categories.map((category) {
+                              return DropdownMenuItem(
+                                value: category,
+                                child: Text(category.toUpperCase()),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                selectedCategory = value!;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: selectedPriority,
+                            decoration: const InputDecoration(
+                              labelText: 'Prioritas',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                            ),
+                            items: priorities.map((priority) {
+                              return DropdownMenuItem(
+                                value: priority,
+                                child: Text(priority.toUpperCase()),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                selectedPriority = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Batal'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Consumer<AdminContentProvider>(
+                            builder: (context, provider, child) {
+                              return ElevatedButton(
+                                onPressed: provider.isLoading
+                                    ? null
+                                    : () => _createAnnouncement(
+                                          context,
+                                          titleController.text,
+                                          contentController.text,
+                                          selectedCategory,
+                                          selectedPriority,
+                                        ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                ),
+                                child: provider.isLoading
+                                    ? const SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Publikasikan',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -297,8 +395,14 @@ class _AnnouncementManagementTabState extends State<AnnouncementManagementTab> {
     }
   }
 
-  void _createAnnouncement() async {
-    if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
+  void _createAnnouncement(
+    BuildContext context,
+    String title,
+    String content,
+    String category,
+    String priority,
+  ) async {
+    if (title.isEmpty || content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Harap isi semua field')),
       );
@@ -309,15 +413,13 @@ class _AnnouncementManagementTabState extends State<AnnouncementManagementTab> {
 
     try {
       await provider.createAnnouncement(
-        title: _titleController.text,
-        content: _contentController.text,
-        category: _selectedCategory,
-        priority: _selectedPriority,
+        title: title,
+        content: content,
+        category: category,
+        priority: priority,
       );
 
-      // Clear form
-      _titleController.clear();
-      _contentController.clear();
+      Navigator.of(context).pop(); // Close modal
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pengumuman berhasil dipublikasikan!')),
@@ -377,201 +479,345 @@ class MediaManagementTab extends StatefulWidget {
 }
 
 class _MediaManagementTabState extends State<MediaManagementTab> {
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<AdminContentProvider>(
       builder: (context, provider, child) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Form untuk upload media baru
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Upload Media Baru',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+        return Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header dengan tombol tambah
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Galeri Media',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      // Image selection
-                      GestureDetector(
-                        onTap: _pickImage,
-                        child: Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: _selectedImage != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(
-                                    _selectedImage!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : const Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.add_a_photo,
-                                      size: 48,
-                                      color: Colors.grey,
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Tap untuk pilih gambar',
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                        ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => _showUploadMediaModal(context),
+                      icon: const Icon(Icons.add_a_photo,
+                          color: Colors.white, size: 18),
+                      label: const Text('Upload',
+                          style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                       ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Judul Media',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _descriptionController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Deskripsi (Opsional)',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: provider.isLoading ? null : _uploadMedia,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: provider.isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white)
-                              : const Text(
-                                  'Upload Media',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              // Galeri media yang sudah ada
-              const Text(
-                'Galeri Media',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: provider.media.isEmpty
-                    ? const Center(
-                        child: Text('Belum ada media'),
-                      )
-                    : GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                        ),
-                        itemCount: provider.media.length,
-                        itemBuilder: (context, index) {
-                          final media = provider.media[index];
-                          return Card(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(4),
+                const SizedBox(height: 16),
+                // Galeri media yang sudah ada
+                Expanded(
+                  child: provider.media.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.photo_library_outlined,
+                                  size: 64, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text(
+                                'Belum ada media',
+                                style:
+                                    TextStyle(color: Colors.grey, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        )
+                      : GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.8,
+                          ),
+                          itemCount: provider.media.length,
+                          itemBuilder: (context, index) {
+                            final media = provider.media[index];
+                            return Card(
+                              elevation: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                          top: Radius.circular(4),
+                                        ),
+                                        image: media['file_path'] != null
+                                            ? DecorationImage(
+                                                image: NetworkImage(
+                                                    media['file_path']),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : null,
                                       ),
-                                      image: media['file_path'] != null
-                                          ? DecorationImage(
-                                              image: NetworkImage(
-                                                  media['file_path']),
-                                              fit: BoxFit.cover,
-                                            )
+                                      child: media['file_path'] == null
+                                          ? const Icon(Icons.image,
+                                              size: 48, color: Colors.grey)
                                           : null,
                                     ),
-                                    child: media['file_path'] == null
-                                        ? const Icon(Icons.image,
-                                            size: 48, color: Colors.grey)
-                                        : null,
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        media['title'] ?? 'Untitled',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.delete,
-                                                color: Colors.red, size: 16),
-                                            onPressed: () =>
-                                                _deleteMedia(media['id']),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          media['title'] ?? 'Untitled',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
                                           ),
-                                        ],
-                                      ),
-                                    ],
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.delete,
+                                                  color: Colors.red, size: 18),
+                                              onPressed: () =>
+                                                  _deleteMedia(media['id']),
+                                              padding: EdgeInsets.zero,
+                                              constraints:
+                                                  const BoxConstraints(),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Modal untuk upload media baru
+  void _showUploadMediaModal(BuildContext context) {
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
+    File? selectedImage;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                constraints: const BoxConstraints(maxHeight: 500),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.photo_library, color: Colors.blue),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Upload Media Baru',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Image selection dengan opsi kamera dan galeri
+                    GestureDetector(
+                      onTap: () =>
+                          _showImageSourceDialog(context, setState, (file) {
+                        selectedImage = file;
+                      }),
+                      child: Container(
+                        height: 120,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: selectedImage != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  selectedImage!,
+                                  fit: BoxFit.cover,
                                 ),
-                              ],
-                            ),
-                          );
-                        },
+                              )
+                            : const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_a_photo,
+                                    size: 32,
+                                    color: Colors.grey,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Tap untuk pilih gambar',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 12),
+                                  ),
+                                ],
+                              ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Judul Media',
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: descriptionController,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Deskripsi (Opsional)',
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Batal'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Consumer<AdminContentProvider>(
+                            builder: (context, provider, child) {
+                              return ElevatedButton(
+                                onPressed: provider.isLoading
+                                    ? null
+                                    : () => _uploadMedia(
+                                          context,
+                                          selectedImage,
+                                          titleController.text,
+                                          descriptionController.text,
+                                        ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                ),
+                                child: provider.isLoading
+                                    ? const SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Upload',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Dialog untuk memilih sumber gambar (kamera atau galeri)
+  void _showImageSourceDialog(BuildContext context, StateSetter setState,
+      Function(File?) onImageSelected) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Pilih Sumber Gambar'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Kamera'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  final XFile? image = await _picker.pickImage(
+                    source: ImageSource.camera,
+                    imageQuality: 80,
+                  );
+
+                  if (image != null) {
+                    setState(() {
+                      onImageSelected(File(image.path));
+                    });
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galeri'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  final XFile? image = await _picker.pickImage(
+                    source: ImageSource.gallery,
+                    imageQuality: 80,
+                  );
+
+                  if (image != null) {
+                    setState(() {
+                      onImageSelected(File(image.path));
+                    });
+                  }
+                },
               ),
             ],
           ),
@@ -580,21 +826,13 @@ class _MediaManagementTabState extends State<MediaManagementTab> {
     );
   }
 
-  void _pickImage() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-
-    if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-      });
-    }
-  }
-
-  void _uploadMedia() async {
-    if (_selectedImage == null || _titleController.text.isEmpty) {
+  void _uploadMedia(
+    BuildContext context,
+    File? selectedImage,
+    String title,
+    String description,
+  ) async {
+    if (selectedImage == null || title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Harap pilih gambar dan isi judul')),
       );
@@ -605,18 +843,13 @@ class _MediaManagementTabState extends State<MediaManagementTab> {
 
     try {
       await provider.uploadMedia(
-        filePath: _selectedImage!.path,
-        title: _titleController.text,
-        description: _descriptionController.text,
+        filePath: selectedImage.path,
+        title: title,
+        description: description,
         category: 'general',
       );
 
-      // Clear form
-      setState(() {
-        _selectedImage = null;
-      });
-      _titleController.clear();
-      _descriptionController.clear();
+      Navigator.of(context).pop(); // Close modal
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Media berhasil diupload!')),
