@@ -190,7 +190,10 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
                 Route::get('{announcement}', [AnnouncementController::class, 'show']);
                 Route::post('{announcement}/like', [AnnouncementController::class, 'toggleLike']);
                 Route::post('{announcement}/comments', [AnnouncementController::class, 'addComment']);
-                Route::post('comments/{comment}/like', [AnnouncementController::class, 'toggleCommentLike']);
+            });
+            
+            Route::prefix('comments')->group(function () {
+                Route::post('{comment}/like', [AnnouncementController::class, 'toggleCommentLike']);
             });
 
             Route::prefix('media')->group(function () {

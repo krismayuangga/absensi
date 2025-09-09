@@ -16,7 +16,10 @@ class AnnouncementInteraction extends Model
         'interaction_type',
     ];
 
-    public $timestamps = ['created_at']; // Only created_at, no updated_at
+    public $timestamps = true; // Enable timestamps
+    
+    // Override to only use created_at
+    const UPDATED_AT = null;
 
     // Relationships
     public function announcement(): BelongsTo

@@ -662,6 +662,9 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
         _commentController.clear();
         _cancelReply();
 
+        // Refresh data to show new comment
+        provider.loadAnnouncementDetails(widget.announcementId);
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

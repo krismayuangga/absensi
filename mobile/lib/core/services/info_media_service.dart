@@ -122,7 +122,7 @@ class InfoMediaService {
     }
   }
 
-  /// Add comment to announcement
+  /// Add comment to announcement (Legacy method - use addComment instead)
   Future<Map<String, dynamic>> addAnnouncementComment(int id, String comment,
       {int? parentId}) async {
     try {
@@ -134,9 +134,9 @@ class InfoMediaService {
       };
 
       final response =
-          await _dio.post('/v1/announcements/$id/comments', data: data);
+          await _dio.post('/info-media/announcements/$id/comments', data: data);
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return {
           'success': true,
           'data': response.data['data'],
@@ -171,7 +171,7 @@ class InfoMediaService {
     try {
       _addAuthToken();
 
-      await _dio.post('/info-media/comments/$commentId/like');
+      await _dio.post('/v1/info-media/comments/$commentId/like');
     } catch (e) {
       print('❌ Error toggling comment like: $e');
       throw Exception('Gagal mengubah like komentar: $e');
@@ -429,7 +429,7 @@ class InfoMediaService {
       _addAuthToken();
 
       final response =
-          await _dio.post('/info-media/announcements/$announcementId/like');
+          await _dio.post('/v1/info-media/announcements/$announcementId/like');
 
       if (response.statusCode == 200) {
         return response.data;
@@ -464,14 +464,14 @@ class InfoMediaService {
       print('📤 Request data: $data');
 
       final response = await _dio.post(
-          '/info-media/announcements/$announcementId/comments',
+          '/v1/info-media/announcements/$announcementId/comments',
           data: data);
 
       print('📥 Response status: ${response.statusCode}');
       print('📥 Response data: ${response.data}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return response.data['comment'];
+        return response.data['data'];
       }
 
       return null;
@@ -486,7 +486,7 @@ class InfoMediaService {
     try {
       _addAuthToken();
 
-      await _dio.delete('/info-media/comments/$commentId');
+      await _dio.delete('/v1/info-media/comments/$commentId');
     } catch (e) {
       print('❌ Error deleting comment: $e');
       throw Exception('Gagal menghapus komentar: $e');

@@ -102,7 +102,22 @@ class AnnouncementController extends Controller
         try {
             $user = Auth::user();
 
-            // Simplified version for debugging - remove complex checks first
+            // Mark as read if user is authenticated
+            if ($user) {
+                $announcement->markAsRead($user->id);
+            }
+
+            // Load comments with their user and replies
+            $announcement->load([
+                'comments' => function($query) {
+                    $query->approved()
+                          ->whereNull('parent_id') // Only parent comments
+                          ->with(['user:id,name,avatar', 'replies.user:id,name,avatar'])
+                          ->latest();
+                },
+                'creator:id,name'
+            ]);
+
             return response()->json([
                 'status' => 'success',
                 'data' => [
@@ -110,23 +125,48 @@ class AnnouncementController extends Controller
                     'title' => $announcement->title,
                     'content' => $announcement->content,
                     'priority' => $announcement->priority,
-                    'priority_label' => $announcement->priority_label ?? 'Sedang',
-                    'priority_color' => $announcement->priority_color ?? 'blue', 
+                    'priority_label' => $announcement->priority_label,
+                    'priority_color' => $announcement->priority_color, 
                     'category' => $announcement->category,
                     'created_at' => $announcement->created_at->format('d M Y, H:i'),
                     'creator' => [
-                        'name' => 'Admin User', // Hardcoded for now
+                        'name' => $announcement->creator->name ?? 'Admin',
                     ],
                     'stats' => [
-                        'read_count' => 0,
-                        'like_count' => 0,
-                        'comment_count' => 0,
+                        'read_count' => $announcement->read_count,
+                        'like_count' => $announcement->like_count,
+                        'comment_count' => $announcement->comment_count,
                     ],
                     'user_interactions' => [
-                        'is_liked' => false,
+                        'is_liked' => $user ? $announcement->is_liked_by : false,
                         'is_read' => true,
                     ],
-                    'comments' => [], // Empty for now
+                    'comments' => $announcement->comments->map(function($comment) use ($user) {
+                        return [
+                            'id' => $comment->id,
+                            'comment' => $comment->comment,
+                            'like_count' => $comment->like_count,
+                            'is_liked' => $user ? $comment->is_liked_by : false,
+                            'created_at' => $comment->created_at->diffForHumans(),
+                            'user' => [
+                                'name' => $comment->user->name ?? 'Unknown User',
+                                'avatar' => $comment->user->avatar ?? null,
+                            ],
+                            'replies' => $comment->replies->map(function($reply) use ($user) {
+                                return [
+                                    'id' => $reply->id,
+                                    'comment' => $reply->comment,
+                                    'like_count' => $reply->like_count,
+                                    'is_liked' => $user ? $reply->is_liked_by : false,
+                                    'created_at' => $reply->created_at->diffForHumans(),
+                                    'user' => [
+                                        'name' => $reply->user->name ?? 'Unknown User',
+                                        'avatar' => $reply->user->avatar ?? null,
+                                    ],
+                                ];
+                            }),
+                        ];
+                    }),
                 ],
             ]);
         } catch (\Exception $e) {
@@ -143,26 +183,71 @@ class AnnouncementController extends Controller
      */
     public function toggleLike(Announcement $announcement): JsonResponse
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
+            \Log::info('Toggle like attempt', [
+                'user_id' => $user->id,
+                'announcement_id' => $announcement->id,
+            ]);
 
-        // Check access
-        if (!Announcement::active()->published()->forUser($user)->where('id', $announcement->id)->exists()) {
+            // Simplified access check for debugging
+            // Remove complex checks temporarily
+            // if (!Announcement::active()->published()->forUser($user)->where('id', $announcement->id)->exists()) {
+            //     return response()->json([
+            //         'status' => 'error',
+            //         'message' => 'Pengumuman tidak ditemukan',
+            //     ], 404);
+            // }
+
+            // Simple manual toggle logic for debugging
+            $existingLike = \App\Models\AnnouncementInteraction::where([
+                'announcement_id' => $announcement->id,
+                'user_id' => $user->id,
+                'interaction_type' => 'like',
+            ])->first();
+
+            \Log::info('Existing like check', ['existing_like' => $existingLike ? 'found' : 'not found']);
+
+            if ($existingLike) {
+                // Unlike
+                $existingLike->delete();
+                $announcement->decrement('like_count');
+                $isLiked = false;
+                \Log::info('Unliked announcement');
+            } else {
+                // Like
+                \App\Models\AnnouncementInteraction::create([
+                    'announcement_id' => $announcement->id,
+                    'user_id' => $user->id,
+                    'interaction_type' => 'like',
+                ]);
+                $announcement->increment('like_count');
+                $isLiked = true;
+                \Log::info('Liked announcement');
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'is_liked' => $isLiked,
+                    'like_count' => $announcement->fresh()->like_count,
+                ],
+                'message' => $isLiked ? 'Pengumuman disukai' : 'Batal menyukai pengumuman',
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Toggle like error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+                'announcement_id' => $announcement->id ?? 'unknown',
+                'user_id' => $user->id ?? 'unknown'
+            ]);
+            
             return response()->json([
                 'status' => 'error',
-                'message' => 'Pengumuman tidak ditemukan',
-            ], 404);
+                'message' => 'Gagal mengubah status like: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $isLiked = $announcement->toggleLike($user->id);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'is_liked' => $isLiked,
-                'like_count' => $announcement->fresh()->like_count,
-            ],
-            'message' => $isLiked ? 'Pengumuman disukai' : 'Batal menyukai pengumuman',
-        ]);
     }
 
     /**
@@ -177,15 +262,6 @@ class AnnouncementController extends Controller
                 'announcement_id' => $announcement->id,
                 'request_data' => $request->all()
             ]);
-
-            // Simplified access check for debugging
-            // Remove complex checks temporarily
-            // if (!Announcement::active()->published()->forUser($user)->where('id', $announcement->id)->exists()) {
-            //     return response()->json([
-            //         'status' => 'error',
-            //         'message' => 'Pengumuman tidak ditemukan',
-            //     ], 404);
-            // }
 
             $validator = Validator::make($request->all(), [
                 'comment' => 'required|string|max:1000',
@@ -222,7 +298,7 @@ class AnnouncementController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'data' => [
+                'comment' => [
                     'id' => $comment->id,
                     'comment' => $comment->comment,
                     'like_count' => 0,
@@ -235,7 +311,7 @@ class AnnouncementController extends Controller
                     'replies' => [],
                 ],
                 'message' => 'Komentar berhasil ditambahkan',
-            ]);
+            ], 201);
 
         } catch (\Exception $e) {
             \Log::error('Add comment error: ' . $e->getMessage(), [
