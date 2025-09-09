@@ -104,7 +104,7 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
               padding: EdgeInsets.all(16.w),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.85,
+                childAspectRatio: 0.9,
                 crossAxisSpacing: 12.w,
                 mainAxisSpacing: 12.h,
               ),
@@ -230,26 +230,27 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
                 padding: EdgeInsets.all(12.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       title,
                       style: GoogleFonts.poppins(
-                        fontSize: 14.sp,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
                         color: theme.textTheme.bodyLarge?.color,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (description.isNotEmpty) ...[
-                      SizedBox(height: 4.h),
+                      SizedBox(height: 2.h),
                       Text(
                         description,
                         style: GoogleFonts.inter(
-                          fontSize: 12.sp,
+                          fontSize: 11.sp,
                           color: theme.textTheme.bodyMedium?.color,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -258,15 +259,15 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
                       children: [
                         Icon(
                           Icons.access_time,
-                          size: 12.w,
+                          size: 10.w,
                           color: Colors.grey.shade500,
                         ),
-                        SizedBox(width: 4.w),
+                        SizedBox(width: 2.w),
                         Expanded(
                           child: Text(
                             createdAt,
                             style: GoogleFonts.inter(
-                              fontSize: 10.sp,
+                              fontSize: 9.sp,
                               color: Colors.grey.shade500,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -275,19 +276,19 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
                       ],
                     ),
                     if (formattedSize.isNotEmpty) ...[
-                      SizedBox(height: 4.h),
+                      SizedBox(height: 2.h),
                       Row(
                         children: [
                           Icon(
                             Icons.storage,
-                            size: 12.w,
+                            size: 10.w,
                             color: Colors.grey.shade500,
                           ),
-                          SizedBox(width: 4.w),
+                          SizedBox(width: 2.w),
                           Text(
                             formattedSize,
                             style: GoogleFonts.inter(
-                              fontSize: 10.sp,
+                              fontSize: 9.sp,
                               color: Colors.grey.shade500,
                             ),
                           ),
