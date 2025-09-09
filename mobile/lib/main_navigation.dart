@@ -58,6 +58,8 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -65,10 +67,10 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.scaffoldBackgroundColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: theme.shadowColor.withOpacity(0.1),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
@@ -125,6 +127,7 @@ class _MainNavigationState extends State<MainNavigation> {
     required int index,
   }) {
     final isActive = _currentIndex == index;
+    final theme = Theme.of(context);
 
     return GestureDetector(
       onTap: () {
@@ -139,7 +142,7 @@ class _MainNavigationState extends State<MainNavigation> {
         ),
         decoration: BoxDecoration(
           color: isActive
-              ? AppTheme.primaryColor.withOpacity(0.1)
+              ? theme.primaryColor.withOpacity(0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12.r),
         ),
@@ -148,7 +151,8 @@ class _MainNavigationState extends State<MainNavigation> {
           children: [
             Icon(
               isActive ? activeIcon : icon,
-              color: isActive ? AppTheme.primaryColor : Colors.grey.shade600,
+              color:
+                  isActive ? theme.primaryColor : theme.unselectedWidgetColor,
               size: 24.w,
             ),
             SizedBox(height: 4.h),
@@ -157,7 +161,8 @@ class _MainNavigationState extends State<MainNavigation> {
               style: GoogleFonts.inter(
                 fontSize: 10.sp,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive ? AppTheme.primaryColor : Colors.grey.shade600,
+                color:
+                    isActive ? theme.primaryColor : theme.unselectedWidgetColor,
               ),
             ),
           ],

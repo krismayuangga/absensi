@@ -10,7 +10,6 @@ import '../admin/admin_main_screen.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/notification_settings_screen.dart';
-import 'screens/language_settings_screen.dart';
 import 'screens/theme_settings_screen.dart';
 
 class ProfileMainScreen extends StatefulWidget {
@@ -31,10 +30,12 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: theme.primaryColor,
         elevation: 0,
         title: Text(
           'Profil',
@@ -72,7 +73,10 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                   padding: EdgeInsets.all(24.w),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.teal.shade400, Colors.teal.shade600],
+                      colors: [
+                        theme.primaryColor,
+                        theme.primaryColor.withOpacity(0.8)
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -97,7 +101,7 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                         child: Icon(
                           Icons.person,
                           size: 40.w,
-                          color: Colors.teal.shade600,
+                          color: theme.primaryColor,
                         ),
                       ),
                       SizedBox(height: 16.h),
@@ -139,7 +143,7 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor: AppTheme.primaryColor,
+                          foregroundColor: theme.primaryColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20.r),
                           ),
@@ -243,14 +247,6 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                       ),
                     );
                   }),
-                  _buildMenuButton('Bahasa', Icons.language, () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LanguageSettingsScreen(),
-                      ),
-                    );
-                  }),
                   _buildMenuButton('Tema', Icons.palette, () {
                     Navigator.push(
                       context,
@@ -266,12 +262,12 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                 // Application Info
                 _buildSection('Tentang Aplikasi', [
                   _buildInfoItem('Versi', '1.0.0', Icons.info),
-                  _buildInfoItem('Build', '2025.09.02', Icons.code),
-                  _buildMenuButton('Bantuan & FAQ', Icons.help, () {
+                  _buildInfoItem('Build', '2025.09.09', Icons.code),
+                  _buildMenuButton('Bantuan & Support', Icons.help, () {
                     _showHelp();
                   }),
-                  _buildMenuButton('Kebijakan Privasi', Icons.privacy_tip, () {
-                    _showPrivacyPolicy();
+                  _buildMenuButton('Kebijakan Perusahaan', Icons.policy, () {
+                    _showCompanyPolicy();
                   }),
                 ]),
 
@@ -320,6 +316,8 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
   }
 
   Widget _buildSection(String title, List<Widget> children) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -328,18 +326,18 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
           style: GoogleFonts.poppins(
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color ?? theme.primaryColor,
           ),
         ),
         SizedBox(height: 12.h),
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(12.r),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: theme.shadowColor.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -354,6 +352,8 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
   }
 
   Widget _buildInfoItem(String label, String value, IconData icon) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: EdgeInsets.all(16.w),
       child: Row(
@@ -362,13 +362,15 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
             width: 40.w,
             height: 40.w,
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: theme.brightness == Brightness.dark
+                  ? theme.cardColor.withOpacity(0.3)
+                  : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Icon(
               icon,
               size: 20.w,
-              color: Colors.grey.shade600,
+              color: theme.unselectedWidgetColor,
             ),
           ),
           SizedBox(width: 16.w),
@@ -380,7 +382,7 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                   label,
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
-                    color: AppTheme.textSecondary,
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
                   ),
                 ),
                 SizedBox(height: 4.h),
@@ -389,7 +391,7 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.textPrimary,
+                    color: theme.textTheme.bodyLarge?.color,
                   ),
                 ),
               ],
@@ -401,6 +403,8 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
   }
 
   Widget _buildMenuButton(String title, IconData icon, VoidCallback onTap) {
+    final theme = Theme.of(context);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12.r),
@@ -412,13 +416,15 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
               width: 40.w,
               height: 40.w,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: theme.brightness == Brightness.dark
+                    ? theme.cardColor.withOpacity(0.3)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(10.r),
               ),
               child: Icon(
                 icon,
                 size: 20.w,
-                color: Colors.grey.shade600,
+                color: theme.unselectedWidgetColor,
               ),
             ),
             SizedBox(width: 16.w),
@@ -428,13 +434,13 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
-                  color: AppTheme.textPrimary,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
               ),
             ),
             Icon(
               Icons.chevron_right,
-              color: AppTheme.textSecondary,
+              color: theme.unselectedWidgetColor,
               size: 20.w,
             ),
           ],
@@ -546,16 +552,136 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
   }
 
   void _showHelp() {
-    // TODO: Implement help & FAQ
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bantuan & FAQ akan segera tersedia!')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Bantuan & Support',
+          style: GoogleFonts.poppins(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Butuh bantuan? Hubungi tim IT internal:',
+                style: GoogleFonts.inter(fontSize: 14.sp),
+              ),
+              SizedBox(height: 16.h),
+              _buildContactItem(
+                  Icons.email, 'Email', 'it-support@perusahaan.com'),
+              _buildContactItem(Icons.phone, 'Telepon', 'Ext. 123'),
+              _buildContactItem(Icons.chat, 'WhatsApp', '+62 811-2345-6789'),
+              SizedBox(height: 16.h),
+              Text(
+                'FAQ Umum:',
+                style: GoogleFonts.inter(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                '• Cara absen: Buka tab Beranda > Tap tombol Clock In\n'
+                '• Lupa password: Hubungi admin untuk reset\n'
+                '• Masalah GPS: Pastikan lokasi aktif dan izin diberikan\n'
+                '• Laporan error: Screenshot error dan kirim ke IT',
+                style: GoogleFonts.inter(fontSize: 12.sp),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup'),
+          ),
+        ],
+      ),
     );
   }
 
-  void _showPrivacyPolicy() {
-    // TODO: Implement privacy policy
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Kebijakan privasi akan segera tersedia!')),
+  void _showCompanyPolicy() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Kebijakan Perusahaan',
+          style: GoogleFonts.poppins(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Kebijakan Penggunaan Aplikasi Absensi:',
+                style: GoogleFonts.inter(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                '1. Kehadiran & Absensi:\n'
+                '• Wajib absen tepat waktu sesuai jadwal\n'
+                '• Absen hanya di lokasi yang ditentukan\n'
+                '• Dilarang titip absen atau manipulasi GPS\n\n'
+                '2. Data Pribadi:\n'
+                '• Data karyawan dilindungi sesuai UU\n'
+                '• Akses data terbatas sesuai jabatan\n'
+                '• Wajib menjaga kerahasiaan data\n\n'
+                '3. Penggunaan Aplikasi:\n'
+                '• Gunakan hanya untuk keperluan kerja\n'
+                '• Dilarang berbagi akun dengan orang lain\n'
+                '• Laporkan bug atau masalah ke IT\n\n'
+                '4. Sanksi:\n'
+                '• Pelanggaran akan dikenai sanksi\n'
+                '• Sanksi sesuai aturan perusahaan',
+                style: GoogleFonts.inter(fontSize: 12.sp),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactItem(IconData icon, String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.h),
+      child: Row(
+        children: [
+          Icon(icon, size: 16.sp, color: Theme.of(context).primaryColor),
+          SizedBox(width: 8.w),
+          Text(
+            '$label: ',
+            style: GoogleFonts.inter(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.inter(fontSize: 12.sp),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

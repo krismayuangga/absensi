@@ -171,15 +171,17 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
 
   Widget _buildFilterChip(
       String label, bool isSelected, VoidCallback onTap, Color color) {
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: isSelected ? color : Colors.grey.shade200,
+          color: isSelected ? color : theme.cardColor,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
+            color: isSelected ? color : theme.dividerColor,
             width: 1,
           ),
         ),
@@ -188,7 +190,8 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
           style: GoogleFonts.poppins(
             fontSize: 12.sp,
             fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.grey.shade700,
+            color:
+                isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
           ),
         ),
       ),
@@ -196,6 +199,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
   }
 
   Widget _buildAnnouncementCard(Map<String, dynamic> announcement) {
+    final theme = Theme.of(context);
     final priority = announcement['priority'] as String;
     final priorityColor = Provider.of<InfoMediaProvider>(context, listen: false)
         .getPriorityColor(priority);
@@ -205,7 +209,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(

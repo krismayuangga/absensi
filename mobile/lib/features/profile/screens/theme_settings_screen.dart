@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../core/providers/profile_provider.dart';
+import '../../../core/providers/theme_provider.dart';
 
 class ThemeSettingsScreen extends StatefulWidget {
   const ThemeSettingsScreen({super.key});
@@ -14,86 +14,28 @@ class ThemeSettingsScreen extends StatefulWidget {
 }
 
 class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
-  final List<Map<String, dynamic>> _themes = [
-    {
-      'id': 'light',
-      'name': 'Light Mode',
-      'description': 'Tema terang untuk penggunaan sehari-hari',
-      'icon': Icons.light_mode,
-      'primaryColor': Color(0xFF4A9B8E),
-      'backgroundColor': Colors.white,
-      'textColor': Colors.black87,
-    },
-    {
-      'id': 'dark',
-      'name': 'Dark Mode',
-      'description': 'Tema gelap untuk kenyamanan mata',
-      'icon': Icons.dark_mode,
-      'primaryColor': Color(0xFF4A9B8E),
-      'backgroundColor': Color(0xFF121212),
-      'textColor': Colors.white,
-    },
-    {
-      'id': 'auto',
-      'name': 'Auto (Sistem)',
-      'description': 'Ikuti pengaturan sistem perangkat',
-      'icon': Icons.auto_mode,
-      'primaryColor': Color(0xFF4A9B8E),
-      'backgroundColor': Colors.grey.shade100,
-      'textColor': Colors.black54,
-    },
-  ];
-
-  final List<Map<String, dynamic>> _colorSchemes = [
-    {
-      'name': 'Teal (Default)',
-      'color': Color(0xFF4A9B8E),
-    },
-    {
-      'name': 'Blue',
-      'color': Color(0xFF2196F3),
-    },
-    {
-      'name': 'Purple',
-      'color': Color(0xFF9C27B0),
-    },
-    {
-      'name': 'Green',
-      'color': Color(0xFF4CAF50),
-    },
-    {
-      'name': 'Orange',
-      'color': Color(0xFFFF9800),
-    },
-    {
-      'name': 'Red',
-      'color': Color(0xFFF44336),
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppTheme.primaryColor,
-        elevation: 0,
-        title: Text(
-          'Pengaturan Tema',
-          style: GoogleFonts.poppins(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: themeProvider.primaryColor,
+            elevation: 0,
+            title: Text(
+              'Pengaturan Tema',
+              style: GoogleFonts.poppins(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            leading: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+            ),
           ),
-        ),
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
-      ),
-      body: Consumer<ProfileProvider>(
-        builder: (context, profileProvider, child) {
-          return SingleChildScrollView(
+          body: SingleChildScrollView(
             padding: EdgeInsets.all(16.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,19 +43,30 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                 // Theme Mode Section
                 _buildSection(
                   'Mode Tema',
-                  'Pilih tampilan yang nyaman untuk Anda',
-                  Column(
-                    children: _themes.map((theme) {
-                      bool isSelected =
-                          profileProvider.selectedTheme == theme['id'];
-
-                      return _buildThemeCard(
-                        theme: theme,
-                        isSelected: isSelected,
-                        onTap: () => _selectTheme(theme['id']),
-                      );
-                    }).toList(),
-                  ),
+                  'Pilih mode tema yang Anda inginkan',
+                  [
+                    _buildThemeModeOption(
+                      'Light Mode',
+                      'Tema terang untuk penggunaan sehari-hari',
+                      Icons.light_mode,
+                      ThemeMode.light,
+                      themeProvider,
+                    ),
+                    _buildThemeModeOption(
+                      'Dark Mode',
+                      'Tema gelap untuk kenyamanan mata',
+                      Icons.dark_mode,
+                      ThemeMode.dark,
+                      themeProvider,
+                    ),
+                    _buildThemeModeOption(
+                      'Auto (Sistem)',
+                      'Ikuti pengaturan sistem perangkat',
+                      Icons.auto_mode,
+                      ThemeMode.system,
+                      themeProvider,
+                    ),
+                  ],
                 ),
 
                 SizedBox(height: 24.h),
@@ -122,148 +75,196 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                 _buildSection(
                   'Skema Warna',
                   'Pilih warna utama aplikasi',
-                  Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 12.w,
-                            mainAxisSpacing: 12.h,
-                            childAspectRatio: 1,
-                          ),
-                          itemCount: _colorSchemes.length,
-                          itemBuilder: (context, index) {
-                            final colorScheme = _colorSchemes[index];
-                            bool isSelected = AppTheme.primaryColor.value ==
-                                colorScheme['color'].value;
-
-                            return GestureDetector(
-                              onTap: () =>
-                                  _selectColorScheme(colorScheme['color']),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: colorScheme['color'],
-                                  borderRadius: BorderRadius.circular(12.r),
-                                  border: isSelected
-                                      ? Border.all(
-                                          color: Colors.black, width: 3)
-                                      : null,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          colorScheme['color'].withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: isSelected
-                                    ? Icon(
-                                        Icons.check,
-                                        color: Colors.white,
-                                        size: 32.r,
-                                      )
-                                    : null,
-                              ),
-                            );
-                          },
-                        ),
-                        SizedBox(height: 16.h),
-                        // Color names
-                        Wrap(
-                          children: _colorSchemes.map((colorScheme) {
-                            bool isSelected = AppTheme.primaryColor.value ==
-                                colorScheme['color'].value;
-
-                            return Container(
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: 4.w, vertical: 2.h),
-                              child: Chip(
-                                label: Text(
-                                  colorScheme['name'],
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12.sp,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : AppTheme.textPrimary,
-                                  ),
-                                ),
-                                backgroundColor: isSelected
-                                    ? colorScheme['color']
-                                    : Colors.grey.shade100,
-                                side: isSelected
-                                    ? BorderSide.none
-                                    : BorderSide(color: Colors.grey.shade300),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                  ),
+                  [
+                    _buildColorPalette(themeProvider),
+                  ],
                 ),
 
                 SizedBox(height: 24.h),
 
                 // Preview Section
                 _buildSection(
-                  'Pratinjau',
-                  'Lihat bagaimana tema akan terlihat',
-                  _buildThemePreview(),
-                ),
-
-                SizedBox(height: 24.h),
-
-                // Reset Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50.h,
-                  child: OutlinedButton(
-                    onPressed: () => _resetTheme(),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppTheme.primaryColor),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.restore,
-                          color: AppTheme.primaryColor,
-                          size: 20.r,
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          'Reset ke Default',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  'Preview',
+                  'Lihat tampilan dengan tema yang dipilih',
+                  [
+                    _buildPreviewCard(themeProvider),
+                  ],
                 ),
               ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSection(String title, String subtitle, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        SizedBox(height: 4.h),
+        Text(
+          subtitle,
+          style: GoogleFonts.inter(
+            fontSize: 12.sp,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          ),
+        ),
+        SizedBox(height: 12.h),
+        ...children,
+      ],
+    );
+  }
+
+  Widget _buildThemeModeOption(
+    String title,
+    String description,
+    IconData icon,
+    ThemeMode mode,
+    ThemeProvider themeProvider,
+  ) {
+    final isSelected = themeProvider.themeMode == mode;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.h),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isSelected
+              ? themeProvider.primaryColor
+              : Theme.of(context).dividerColor,
+          width: isSelected ? 2 : 1,
+        ),
+        boxShadow: [
+          if (isSelected)
+            BoxShadow(
+              color: themeProvider.primaryColor.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+        ],
+      ),
+      child: ListTile(
+        onTap: () => themeProvider.setThemeMode(mode),
+        leading: Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? themeProvider.primaryColor.withOpacity(0.1)
+                : Theme.of(context).colorScheme.surface.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          child: Icon(
+            icon,
+            color: isSelected
+                ? themeProvider.primaryColor
+                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            size: 20.sp,
+          ),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: isSelected
+                ? themeProvider.primaryColor
+                : Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          description,
+          style: GoogleFonts.inter(
+            fontSize: 12.sp,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          ),
+        ),
+        trailing: Radio<ThemeMode>(
+          value: mode,
+          groupValue: themeProvider.themeMode,
+          onChanged: (value) => themeProvider.setThemeMode(value!),
+          activeColor: themeProvider.primaryColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorPalette(ThemeProvider themeProvider) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 12.w,
+          mainAxisSpacing: 12.h,
+          childAspectRatio: 2.5,
+        ),
+        itemCount: ThemeProvider.availableColors.length,
+        itemBuilder: (context, index) {
+          final color = ThemeProvider.availableColors[index];
+          final name = ThemeProvider.colorNames[index];
+          final isSelected = themeProvider.primaryColor.value == color.value;
+
+          return GestureDetector(
+            onTap: () => themeProvider.setPrimaryColor(color),
+            child: Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: Text(
+                      name.split(' ')[0], // Take first word only
+                      style: GoogleFonts.inter(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  if (isSelected)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: EdgeInsets.all(2.w),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check,
+                          size: 12.sp,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           );
         },
@@ -271,279 +272,150 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     );
   }
 
-  Widget _buildSection(String title, String description, Widget child) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.poppins(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          description,
-          style: GoogleFonts.inter(
-            fontSize: 14.sp,
-            color: AppTheme.textSecondary,
-          ),
-        ),
-        SizedBox(height: 16.h),
-        child,
-      ],
-    );
-  }
-
-  Widget _buildThemeCard({
-    required Map<String, dynamic> theme,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildPreviewCard(ThemeProvider themeProvider) {
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppTheme.primaryColor.withOpacity(0.1)
-                : Colors.white,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
-              width: isSelected ? 2 : 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 50.w,
-                height: 50.w,
-                decoration: BoxDecoration(
-                  color: theme['backgroundColor'],
-                  borderRadius: BorderRadius.circular(25.r),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Icon(
-                  theme['icon'],
-                  color: theme['textColor'],
-                  size: 24.r,
-                ),
-              ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      theme['name'],
-                      style: GoogleFonts.poppins(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      theme['description'],
-                      style: GoogleFonts.inter(
-                        fontSize: 14.sp,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: AppTheme.primaryColor,
-                  size: 24.r,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemePreview() {
-    return Container(
-      width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Mock App Bar
           Container(
-            width: double.infinity,
-            height: 50.h,
+            height: 56.h,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
+              color: themeProvider.primaryColor,
               borderRadius: BorderRadius.circular(8.r),
             ),
-            child: Center(
-              child: Text(
-                'Pratinjau App Bar',
-                style: GoogleFonts.poppins(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+            child: Row(
+              children: [
+                SizedBox(width: 16.w),
+                Icon(Icons.menu, color: Colors.white, size: 20.sp),
+                SizedBox(width: 16.w),
+                Text(
+                  'Preview Aplikasi',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 16.h),
+
+          // Mock Buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeProvider.primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                  child: Text(
+                    'Primary',
+                    style: GoogleFonts.inter(fontSize: 12.sp),
+                  ),
                 ),
               ),
-            ),
-          ),
-          SizedBox(height: 12.h),
-
-          // Mock Content
-          Text(
-            'Contoh Teks Utama',
-            style: GoogleFonts.poppins(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Ini adalah contoh teks sekunder dalam tema yang dipilih. Teks ini menunjukkan bagaimana konten akan terlihat.',
-            style: GoogleFonts.inter(
-              fontSize: 14.sp,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-          SizedBox(height: 12.h),
-
-          // Mock Button
-          Container(
-            width: double.infinity,
-            height: 40.h,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Center(
-              child: Text(
-                'Contoh Tombol',
-                style: GoogleFonts.poppins(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+              SizedBox(width: 12.w),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: themeProvider.primaryColor,
+                    side: BorderSide(color: themeProvider.primaryColor),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                  child: Text(
+                    'Secondary',
+                    style: GoogleFonts.inter(fontSize: 12.sp),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
 
-  void _selectTheme(String themeId) {
-    final profileProvider =
-        Provider.of<ProfileProvider>(context, listen: false);
-    profileProvider.updateThemeSetting(themeId);
+          SizedBox(height: 16.h),
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Tema diubah ke ${_getThemeName(themeId)}'),
-        backgroundColor: AppTheme.successColor,
-      ),
-    );
-  }
-
-  void _selectColorScheme(Color color) {
-    // TODO: Implement color scheme change
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Skema warna akan segera tersedia!'),
-        backgroundColor: AppTheme.warningColor,
-      ),
-    );
-  }
-
-  void _resetTheme() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        title: Text(
-          'Reset Tema',
-          style: GoogleFonts.poppins(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          'Apakah Anda yakin ingin mengatur ulang tema ke pengaturan default?',
-          style: GoogleFonts.inter(fontSize: 14.sp),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Batal',
-              style: GoogleFonts.inter(
-                fontSize: 14.sp,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              final profileProvider =
-                  Provider.of<ProfileProvider>(context, listen: false);
-              profileProvider.updateThemeSetting('light');
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Tema berhasil direset ke default'),
-                  backgroundColor: AppTheme.successColor,
+          // Mock List Items
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 3,
+            itemBuilder: (context, index) {
+              return Container(
+                margin: EdgeInsets.only(bottom: 8.h),
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 16.r,
+                      backgroundColor: themeProvider.primaryColor,
+                      child: Text(
+                        '${index + 1}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Item ${index + 1}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            'Description untuk item ${index + 1}',
+                            style: GoogleFonts.inter(
+                              fontSize: 12.sp,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: themeProvider.primaryColor,
+                      size: 20.sp,
+                    ),
+                  ],
                 ),
               );
             },
-            child: Text(
-              'Reset',
-              style: GoogleFonts.inter(
-                fontSize: 14.sp,
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
           ),
         ],
       ),
     );
-  }
-
-  String _getThemeName(String themeId) {
-    final theme = _themes.firstWhere(
-      (t) => t['id'] == themeId,
-      orElse: () => _themes.first,
-    );
-    return theme['name'];
   }
 }

@@ -109,7 +109,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
               width: double.infinity,
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: theme.cardColor,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12.r),
                 boxShadow: [
                   BoxShadow(
@@ -160,7 +160,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
-                color: theme.textTheme.bodyLarge?.color,
+                color: AppTheme.textPrimary,
               ),
             ),
             SizedBox(height: 12.h),
@@ -169,7 +169,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
               width: double.infinity,
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: theme.cardColor,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12.r),
                 boxShadow: [
                   BoxShadow(
@@ -217,7 +217,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
-                color: theme.textTheme.bodyLarge?.color,
+                color: AppTheme.textPrimary,
               ),
             ),
             SizedBox(height: 12.h),
@@ -226,7 +226,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
               width: double.infinity,
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: theme.cardColor,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12.r),
                 boxShadow: [
                   BoxShadow(
@@ -294,16 +294,14 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                                           style: GoogleFonts.inter(
                                             fontSize: 14.sp,
                                             fontWeight: FontWeight.w500,
-                                            color: theme
-                                                .textTheme.bodyLarge?.color,
+                                            color: AppTheme.textPrimary,
                                           ),
                                         ),
                                         Text(
                                           '${attendance.date.day}/${attendance.date.month}/${attendance.date.year}',
                                           style: GoogleFonts.inter(
                                             fontSize: 12.sp,
-                                            color: theme
-                                                .textTheme.bodyMedium?.color,
+                                            color: AppTheme.textSecondary,
                                           ),
                                         ),
                                       ],
@@ -314,7 +312,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                                     style: GoogleFonts.poppins(
                                       fontSize: 14.sp,
                                       fontWeight: FontWeight.w600,
-                                      color: theme.textTheme.bodyLarge?.color,
+                                      color: AppTheme.textPrimary,
                                     ),
                                   ),
                                 ],
@@ -353,14 +351,12 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
-          color: theme.cardColor,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
@@ -391,7 +387,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
-                color: theme.textTheme.bodyLarge?.color,
+                color: AppTheme.textPrimary,
               ),
             ),
             SizedBox(height: 4.h),
@@ -399,7 +395,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
               subtitle,
               style: GoogleFonts.inter(
                 fontSize: 12.sp,
-                color: theme.textTheme.bodyMedium?.color,
+                color: AppTheme.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -411,8 +407,6 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
 
   Widget _buildStatusRow(
       String label, String value, IconData icon, Color color) {
-    final theme = Theme.of(context);
-
     return Row(
       children: [
         Container(
@@ -434,7 +428,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
             label,
             style: GoogleFonts.inter(
               fontSize: 14.sp,
-              color: theme.textTheme.bodyLarge?.color,
+              color: AppTheme.textPrimary,
             ),
           ),
         ),
@@ -443,7 +437,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
           style: GoogleFonts.poppins(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
-            color: theme.textTheme.bodyLarge?.color,
+            color: AppTheme.textPrimary,
           ),
         ),
       ],
@@ -451,8 +445,6 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
   }
 
   Widget _buildSummaryItem(String value, String label, Color color) {
-    final theme = Theme.of(context);
-
     return Column(
       children: [
         Text(
@@ -468,7 +460,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
           label,
           style: GoogleFonts.inter(
             fontSize: 12.sp,
-            color: theme.textTheme.bodyMedium?.color,
+            color: AppTheme.textSecondary,
           ),
           textAlign: TextAlign.center,
         ),

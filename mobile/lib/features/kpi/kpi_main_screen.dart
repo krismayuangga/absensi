@@ -28,8 +28,10 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.primaryColor,
         elevation: 0,
@@ -204,6 +206,8 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
   }
 
   Widget _buildKpiStats(KPIProvider kpiProvider) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -212,7 +216,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
           style: GoogleFonts.poppins(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         SizedBox(height: 6.h),
@@ -320,10 +324,12 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
     required IconData icon,
     required Color color,
   }) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: EdgeInsets.all(8.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(8.r),
         boxShadow: [
           BoxShadow(
@@ -355,14 +361,14 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
             style: GoogleFonts.poppins(
               fontSize: 14.sp,
               fontWeight: FontWeight.w700,
-              color: Colors.black87,
+              color: theme.textTheme.bodyLarge?.color,
             ),
           ),
           Text(
             title,
             style: GoogleFonts.inter(
               fontSize: 9.sp,
-              color: Colors.grey.shade600,
+              color: theme.textTheme.bodyMedium?.color,
             ),
           ),
         ],
@@ -371,12 +377,12 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
   }
 
   Widget _buildActiveProspects(KPIProvider kpiProvider) {
+    final theme = Theme.of(context);
+
     // Filter untuk mendapatkan prospek aktif dari data real
-    // Prospek aktif = visits dengan status pending, potential, atau yang perlu follow up
     final activeProspects = kpiProvider.visitHistory
         .where((visit) {
           final status = visit['result_status'] ?? 'pending';
-          // Prospek tetap aktif jika status = pending, potential, atau follow_up
           return status == 'pending' ||
               status == 'potential' ||
               (visit['next_action'] != null &&
@@ -387,7 +393,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
               'status': KPIProvider.getResultStatusLabel(
                   visit['result_status'] ?? 'pending'),
               'last_contact': visit['visited_at'] ?? 'Waktu tidak diketahui',
-              'data': visit, // Keep original data for editing
+              'data': visit,
             })
         .toList();
 
@@ -402,13 +408,12 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: theme.textTheme.bodyLarge?.color,
               ),
             ),
             if (activeProspects.isNotEmpty)
               ElevatedButton.icon(
                 onPressed: () {
-                  // Ambil prospek pertama untuk update
                   if (kpiProvider.pendingVisits.isNotEmpty) {
                     _navigateToResultUpdate(kpiProvider.pendingVisits.first);
                   }
@@ -440,23 +445,23 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
             width: double.infinity,
             padding: EdgeInsets.all(20.w),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: theme.dividerColor),
             ),
             child: Column(
               children: [
                 Icon(
                   Icons.person_add,
                   size: 28.w,
-                  color: Colors.grey.shade400,
+                  color: theme.textTheme.bodyMedium?.color,
                 ),
                 SizedBox(height: 6.h),
                 Text(
                   'Belum ada prospek aktif',
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
-                    color: Colors.grey.shade600,
+                    color: theme.textTheme.bodyMedium?.color,
                   ),
                 ),
               ],
@@ -487,13 +492,14 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
   }
 
   Widget _buildProspectCard(Map<String, dynamic> prospect) {
+    final theme = Theme.of(context);
     final hasData = prospect.containsKey('data');
 
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(10.r),
         border: Border.all(color: const Color(0xFF4A9B8E).withOpacity(0.2)),
         boxShadow: [
@@ -529,7 +535,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: theme.textTheme.bodyLarge?.color,
                   ),
                 ),
                 SizedBox(height: 4.h),
@@ -556,7 +562,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
                       '• ${prospect['last_contact'] ?? 'Waktu tidak diketahui'}',
                       style: GoogleFonts.inter(
                         fontSize: 11.sp,
-                        color: Colors.grey.shade600,
+                        color: theme.textTheme.bodyMedium?.color,
                       ),
                     ),
                   ],
@@ -571,7 +577,6 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
             ),
             child: IconButton(
               onPressed: () {
-                // Semua prospek aktif pasti punya data sekarang
                 final visitData = hasData
                     ? prospect['data']
                     : {
@@ -604,6 +609,8 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
   }
 
   Widget _buildPendingVisits(KPIProvider kpiProvider) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -612,7 +619,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
           style: GoogleFonts.poppins(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         SizedBox(height: 8.h),
@@ -621,9 +628,9 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
             width: double.infinity,
             padding: EdgeInsets.all(20.w),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: theme.dividerColor),
             ),
             child: Column(
               children: [
@@ -637,7 +644,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
                   'Semua kunjungan sudah selesai!',
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
-                    color: Colors.grey.shade600,
+                    color: theme.textTheme.bodyMedium?.color,
                   ),
                 ),
               ],
@@ -647,7 +654,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
           Container(
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(10.r),
               border: Border.all(color: Colors.orange.shade200),
             ),
@@ -675,14 +682,14 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
                       ),
                       Text(
                         'Lihat di bagian "Prospek Aktif" untuk update status',
                         style: GoogleFonts.inter(
                           fontSize: 12.sp,
-                          color: Colors.grey.shade600,
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
                       ),
                     ],
@@ -717,7 +724,6 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
     )
         .then((result) {
       if (result == true) {
-        // Refresh data if result was updated
         Provider.of<KPIProvider>(context, listen: false).initialize();
       }
     });
