@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/admin_provider.dart';
+import '../../core/providers/admin_content_provider.dart';
 import '../../core/theme/app_theme.dart';
 import 'widgets/admin_stats_card.dart';
 import 'widgets/attendance_today_widget.dart';
@@ -8,6 +9,7 @@ import 'widgets/employee_list_widget.dart';
 import 'widgets/attendance_management_widget.dart';
 import 'widgets/leave_management_widget.dart';
 import 'widgets/recent_activities_widget.dart';
+import 'widgets/admin_content_management_widget.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({Key? key}) : super(key: key);
@@ -23,7 +25,7 @@ class _AdminMainScreenState extends State<AdminMainScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
 
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -59,11 +61,13 @@ class _AdminMainScreenState extends State<AdminMainScreen>
           indicatorWeight: 3,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
+          isScrollable: true,
           tabs: const [
             Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
             Tab(icon: Icon(Icons.people), text: 'Karyawan'),
             Tab(icon: Icon(Icons.access_time), text: 'Kehadiran'),
             Tab(icon: Icon(Icons.event_note), text: 'Cuti'),
+            Tab(icon: Icon(Icons.article), text: 'Konten'),
           ],
         ),
       ),
@@ -74,6 +78,7 @@ class _AdminMainScreenState extends State<AdminMainScreen>
           _buildEmployeesTab(),
           _buildAttendanceTab(),
           _buildLeavesTab(),
+          _buildContentTab(),
         ],
       ),
     );
@@ -198,5 +203,9 @@ class _AdminMainScreenState extends State<AdminMainScreen>
 
   Widget _buildLeavesTab() {
     return const LeaveManagementWidget();
+  }
+
+  Widget _buildContentTab() {
+    return const AdminContentManagementWidget();
   }
 }

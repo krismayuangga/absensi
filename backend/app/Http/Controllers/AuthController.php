@@ -133,26 +133,44 @@ class AuthController extends Controller
      */
     public function profile(): JsonResponse
     {
-        $user = Auth::user();
-        
-        return response()->json([
-            'success' => true,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'employee_id' => $user->employee_id,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'position' => $user->position,
-                'department' => $user->department,
-                'company_id' => $user->company_id,
-                'is_active' => $user->is_active,
-                'avatar' => $user->avatar,
-                'created_at' => $user->created_at,
-                'updated_at' => $user->updated_at,
-            ]
-        ]);
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $user->id,
+                    'employee_id' => $user->employee_id ?? 'EMP' . str_pad($user->id, 3, '0', STR_PAD_LEFT),
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'birth_date' => $user->birth_date,
+                    'gender' => $user->gender,
+                    'address' => $user->address,
+                    'avatar' => $user->avatar ?: $user->profile_picture,
+                    'role' => $user->role ?? 'employee',
+                    'status' => $user->is_active ? 'active' : 'inactive',
+                    'is_active' => $user->is_active ?? true,
+                    'position' => $user->position ?? 'Employee',
+                    'department' => $user->department ?? 'General',
+                    'company_id' => $user->company_id,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting user profile: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

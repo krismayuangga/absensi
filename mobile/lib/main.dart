@@ -11,7 +11,7 @@ import 'core/providers/notification_provider.dart';
 import 'core/providers/info_media_provider.dart';
 import 'core/providers/profile_provider.dart';
 import 'core/providers/admin_provider.dart';
-import 'core/providers/theme_provider.dart';
+import 'core/providers/admin_content_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/auth/login_screen.dart';
@@ -39,7 +39,6 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return MultiProvider(
           providers: [
-            ChangeNotifierProvider(create: (_) => ThemeProvider()),
             ChangeNotifierProvider(create: (_) => AuthProvider()),
             ChangeNotifierProvider(create: (_) => AttendanceProvider()),
             ChangeNotifierProvider(create: (_) => KPIProvider()),
@@ -48,22 +47,19 @@ class MyApp extends StatelessWidget {
             ChangeNotifierProvider(create: (_) => InfoMediaProvider()),
             ChangeNotifierProvider(create: (_) => ProfileProvider()),
             ChangeNotifierProvider(create: (_) => AdminProvider()),
+            ChangeNotifierProvider(create: (_) => AdminContentProvider()),
           ],
-          child: Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              return MaterialApp(
-                title: 'Attendance & KPI',
-                theme: themeProvider.lightTheme,
-                darkTheme: themeProvider.darkTheme,
-                themeMode: themeProvider.themeMode,
-                debugShowCheckedModeBanner: false,
-                home: const SplashScreen(),
-                routes: {
-                  '/login': (context) => const LoginScreen(),
-                  '/main': (context) => const MainNavigation(),
-                  '/dashboard': (context) => const DashboardScreen(),
-                },
-              );
+          child: MaterialApp(
+            title: 'Attendance & KPI',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.system,
+            debugShowCheckedModeBanner: false,
+            home: const SplashScreen(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/main': (context) => const MainNavigation(),
+              '/dashboard': (context) => const DashboardScreen(),
             },
           ),
         );

@@ -12,7 +12,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\DebugKpiController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\MediaController;
-use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\AdminContentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -135,13 +135,9 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
     });
 
-    // Profile routes
-    Route::prefix('profile')->group(function () {
-        Route::get('/', [ProfileController::class, 'getUserProfile']);
-        Route::put('/', [ProfileController::class, 'updateProfile']);
-        Route::post('change-password', [ProfileController::class, 'changePassword']);
-        Route::post('upload-image', [ProfileController::class, 'uploadProfileImage']);
-    });
+    // Direct profile route for convenience (maps to auth/profile)
+    Route::get('profile', [AuthController::class, 'profile']);
+    Route::put('profile', [AuthController::class, 'updateProfile']);
 
         // Attendance routes
         Route::prefix('attendance')->group(function () {
@@ -204,6 +200,11 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
             });
         });
 
+        // Announcement routes (for backward compatibility)
+        Route::prefix('announcements')->group(function () {
+            Route::get('categories', [AnnouncementController::class, 'getCategories']);
+        });
+
         // Admin Dashboard routes (for admin role only)
         Route::prefix('admin')->middleware('role:admin')->group(function () {
             Route::get('kpi/overview', [AdminDashboardController::class, 'getKpiOverview']);
@@ -226,6 +227,23 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
             Route::get('master-data', [AdminController::class, 'getMasterData']);
             
             // Admin Info & Media management
+            Route::prefix('content')->group(function () {
+                // Announcements management
+                Route::get('announcements', [AdminContentController::class, 'getAnnouncements']);
+                Route::post('announcements', [AdminContentController::class, 'createAnnouncement']);
+                Route::put('announcements/{announcement}', [AdminContentController::class, 'updateAnnouncement']);
+                Route::delete('announcements/{announcement}', [AdminContentController::class, 'deleteAnnouncement']);
+                
+                // Media management
+                Route::get('media', [AdminContentController::class, 'getMedia']);
+                Route::post('media', [AdminContentController::class, 'uploadMedia']);
+                Route::delete('media/{media}', [AdminContentController::class, 'deleteMedia']);
+                
+                // Content statistics
+                Route::get('stats', [AdminContentController::class, 'getContentStats']);
+            });
+            
+            // Legacy Info & Media management (keeping for backward compatibility)
             Route::prefix('info-media')->group(function () {
                 Route::post('announcements', [AnnouncementController::class, 'store']);
                 Route::put('announcements/{announcement}', [AnnouncementController::class, 'update']);
