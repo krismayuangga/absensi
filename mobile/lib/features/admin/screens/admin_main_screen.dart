@@ -3732,7 +3732,8 @@ class AdminReportsTab extends StatelessWidget {
     }
   }
 
-  void _showProspectDetail(Map<String, dynamic> prospect) {
+  void _showProspectDetail(
+      BuildContext context, Map<String, dynamic> prospect) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -3781,18 +3782,18 @@ class AdminReportsTab extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Basic Info
-                      _buildDetailRow(
+                      _buildRowInline(
                           'Nama Klien', prospect['client_name'] ?? 'N/A'),
-                      _buildDetailRow(
+                      _buildRowInline(
                           'PIC', prospect['employee_name'] ?? 'N/A'),
-                      _buildDetailRow('Alamat', prospect['address'] ?? 'N/A'),
-                      _buildDetailRow('Tujuan Kunjungan',
+                      _buildRowInline('Alamat', prospect['address'] ?? 'N/A'),
+                      _buildRowInline('Tujuan Kunjungan',
                           prospect['visit_purpose'] ?? 'N/A'),
-                      _buildDetailRow('Status', prospect['status'] ?? 'N/A'),
-                      _buildDetailRow('Nilai Potensial',
+                      _buildRowInline('Status', prospect['status'] ?? 'N/A'),
+                      _buildRowInline('Nilai Potensial',
                           'Rp ${_formatCurrency(prospect['potential_value'] ?? 0)}'),
-                      _buildDetailRow('Waktu Kunjungan',
-                          _formatDate(prospect['start_time'])),
+                      _buildRowInline('Waktu Kunjungan',
+                          _formatDateInline(prospect['start_time'])),
 
                       if (prospect['notes'] != null &&
                           prospect['notes'].toString().isNotEmpty) ...[
@@ -3967,7 +3968,7 @@ class AdminReportsTab extends StatelessWidget {
     );
   }
 
-  void _showVisitDetail(Map<String, dynamic> visit) {
+  void _showVisitDetail(BuildContext context, Map<String, dynamic> visit) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -4015,16 +4016,16 @@ class AdminReportsTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDetailRow(
+                      _buildRowInline(
                           'Nama Prospek',
                           visit['prospect_name'] ??
                               visit['client_name'] ??
                               'N/A'),
-                      _buildDetailRow('PIC', visit['employee_name'] ?? 'N/A'),
-                      _buildDetailRow(
+                      _buildRowInline('PIC', visit['employee_name'] ?? 'N/A'),
+                      _buildRowInline(
                           'Tanggal Kunjungan', visit['start_time'] ?? 'N/A'),
-                      _buildDetailRow('Status', visit['status'] ?? 'N/A'),
-                      _buildDetailRow('Alamat', visit['address'] ?? 'N/A'),
+                      _buildRowInline('Status', visit['status'] ?? 'N/A'),
+                      _buildRowInline('Alamat', visit['address'] ?? 'N/A'),
 
                       // Photo Section
                       if (visit['photo_url'] != null &&
@@ -4127,6 +4128,58 @@ class AdminReportsTab extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Helper methods untuk AdminReportsTab
+  String _formatCurrency(dynamic value) {
+    if (value == null) return '0';
+    final number = double.tryParse(value.toString()) ?? 0;
+    if (number >= 1000000000) {
+      return '${(number / 1000000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}Jt';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(0)}K';
+    }
+    return number.toStringAsFixed(0);
+  }
+
+  String _formatDateInline(String? dateStr) {
+    if (dateStr == null) return 'N/A';
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  Widget _buildRowInline(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          Text(': '),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
       ),
     );
   }
