@@ -113,9 +113,15 @@ class AdminService {
   Future<Map<String, dynamic>> createEmployee(
       Map<String, dynamic> employeeData) async {
     try {
+      print('🔄 ADMIN SERVICE: Creating employee...');
+      print('📊 Employee data: $employeeData');
+
       _addAuthToken();
 
       final response = await _dio.post('/admin/employees', data: employeeData);
+
+      print('📡 Create employee response status: ${response.statusCode}');
+      print('📦 Create employee response: ${response.data}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         return {
@@ -133,6 +139,8 @@ class AdminService {
     } catch (e) {
       print('❌ Error creating employee: $e');
       if (e is DioException && e.response != null) {
+        print('❌ DioException status: ${e.response?.statusCode}');
+        print('❌ DioException data: ${e.response?.data}');
         return {
           'success': false,
           'message': e.response?.data['message'] ?? 'Failed to create employee',

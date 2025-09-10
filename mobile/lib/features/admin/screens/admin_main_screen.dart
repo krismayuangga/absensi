@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/providers/admin_provider.dart';
 import '../../../core/providers/admin_content_provider.dart';
+import '../widgets/employee_form_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -405,7 +406,7 @@ class _AdminEmployeesTabState extends State<AdminEmployeesTab> {
                   const Spacer(),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // TODO: Add employee dialog
+                      _showAddEmployeeDialog(context);
                     },
                     icon: const Icon(Icons.add, size: 16),
                     label: const Text('Tambah'),
@@ -532,7 +533,7 @@ class _AdminEmployeesTabState extends State<AdminEmployeesTab> {
           onSelected: (value) {
             switch (value) {
               case 'edit':
-                // TODO: Edit employee dialog
+                _showEditEmployeeDialog(context, employee);
                 break;
               case 'delete':
                 _showDeleteConfirmation(context, employee, provider);
@@ -621,6 +622,30 @@ class _AdminEmployeesTabState extends State<AdminEmployeesTab> {
     }
 
     return position.toString();
+  }
+
+  /// Show add employee dialog
+  void _showAddEmployeeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => EmployeeFormDialog(
+        adminProvider: context.read<AdminProvider>(),
+      ),
+    );
+  }
+
+  /// Show edit employee dialog
+  void _showEditEmployeeDialog(
+      BuildContext context, Map<String, dynamic> employee) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => EmployeeFormDialog(
+        employee: employee,
+        adminProvider: context.read<AdminProvider>(),
+      ),
+    );
   }
 }
 

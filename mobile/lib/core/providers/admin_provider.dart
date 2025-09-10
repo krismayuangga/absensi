@@ -156,19 +156,26 @@ class AdminProvider extends ChangeNotifier {
   }
 
   Future<bool> createEmployee(Map<String, dynamic> employeeData) async {
+    print('🔄 ADMIN PROVIDER: Starting createEmployee...');
+    print('📊 Data received: $employeeData');
+
     _setLoading(true);
     try {
       final result = await _adminService.createEmployee(employeeData);
+      print('📡 Service result: $result');
 
       if (result['success'] == true) {
+        print('✅ Employee created successfully, reloading list...');
         await loadEmployees(refresh: true);
         _errorMessage = null;
         return true;
       } else {
+        print('❌ Failed to create employee: ${result['message']}');
         _errorMessage = result['message'] ?? 'Failed to create employee';
         return false;
       }
     } catch (e) {
+      print('❌ Exception in createEmployee: $e');
       _errorMessage = 'Error: $e';
       debugPrint('Error creating employee: $e');
       return false;

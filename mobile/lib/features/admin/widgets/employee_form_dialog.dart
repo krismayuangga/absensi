@@ -851,6 +851,12 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       return;
     }
 
+    print('🚀 EMPLOYEE FORM: Starting _saveEmployee...');
+    print(
+        '📝 Form data: Name=${_nameController.text}, Email=${_emailController.text}');
+    print(
+        '🏢 Selected: Company=$_selectedCompany, Department=$_selectedDepartment, Position=$_selectedPosition');
+
     setState(() {
       _isLoading = true;
     });
@@ -872,9 +878,12 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       'status': _selectedStatus,
     };
 
+    print('📊 Employee data prepared: $employeeData');
+
     // Add password for new employees (required for creation)
     if (!_isEditMode) {
       if (_passwordController.text.trim().isEmpty) {
+        print('❌ Password is empty for new employee');
         setState(() {
           _isLoading = false;
         });
@@ -887,8 +896,10 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
         return;
       }
       employeeData['password'] = _passwordController.text.trim();
+      print('🔑 Password added for new employee');
     }
 
+    print('🔄 Calling ${_isEditMode ? 'updateEmployee' : 'createEmployee'}...');
     bool success;
     if (_isEditMode) {
       success = await widget.adminProvider.updateEmployee(
@@ -897,6 +908,11 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
       );
     } else {
       success = await widget.adminProvider.createEmployee(employeeData);
+    }
+
+    print('✅ Create employee result: $success');
+    if (!success) {
+      print('❌ Error: ${widget.adminProvider.errorMessage}');
     }
 
     setState(() {
