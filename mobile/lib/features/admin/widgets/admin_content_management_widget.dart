@@ -561,14 +561,14 @@ class _MediaManagementTabState extends State<MediaManagementTab> {
                                           top: Radius.circular(4),
                                         ),
                                       ),
-                                      child: media['file_path'] != null
+                                      child: media['file_url'] != null
                                           ? ClipRRect(
                                               borderRadius:
                                                   const BorderRadius.vertical(
                                                 top: Radius.circular(4),
                                               ),
                                               child: CachedNetworkImage(
-                                                imageUrl: media['file_path'],
+                                                imageUrl: media['file_url'],
                                                 fit: BoxFit.cover,
                                                 placeholder: (context, url) =>
                                                     Container(
