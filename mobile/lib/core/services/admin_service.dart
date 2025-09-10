@@ -519,4 +519,41 @@ class AdminService {
       };
     }
   }
+
+  /// Get KPI analytics for all employees
+  Future<Map<String, dynamic>> getKpiAnalytics() async {
+    try {
+      print('🔄 ADMIN SERVICE: Calling KPI analytics API...');
+      _addAuthToken();
+
+      final response = await _dio.get('/admin/kpi/analytics');
+      print(
+          '📊 ADMIN SERVICE: KPI analytics response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': response.data['data'],
+        };
+      }
+
+      return {
+        'success': false,
+        'message': response.data['message'] ?? 'Failed to get KPI analytics',
+      };
+    } catch (e) {
+      print('❌ Error getting KPI analytics: $e');
+      if (e is DioException && e.response != null) {
+        return {
+          'success': false,
+          'message':
+              e.response?.data['message'] ?? 'Failed to get KPI analytics',
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
 }

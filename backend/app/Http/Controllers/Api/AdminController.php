@@ -685,4 +685,153 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get KPI analytics for all employees
+     */
+    public function getKpiAnalytics()
+    {
+        try {
+            // Import model KpiVisit
+            $kpiModel = new \App\Models\KpiVisit();
+            
+            // Overall KPI statistics
+            $totalVisitsToday = $kpiModel::whereDate('start_time', today())->count();
+            $totalVisitsWeek = $kpiModel::whereBetween('start_time', [now()->startOfWeek(), now()->endOfWeek()])->count();
+            $totalVisitsMonth = $kpiModel::whereMonth('start_time', now()->month)
+                ->whereYear('start_time', now()->year)
+                ->count();
+            
+            // Success metrics
+            $successfulVisitsMonth = $kpiModel::whereMonth('start_time', now()->month)
+                ->whereYear('start_time', now()->year)
+                ->where('status', 'success')
+                ->count();
+                
+            $successRate = $totalVisitsMonth > 0 ? round(($successfulVisitsMonth / $totalVisitsMonth) * 100, 1) : 0;
+            
+            $totalPotentialValue = $kpiModel::whereMonth('start_time', now()->month)
+                ->whereYear('start_time', now()->year)
+                ->where('status', 'success')
+                ->sum('potential_value') ?? 0;
+
+            // Visit breakdown by purpose (current month)
+            $visitsByPurpose = [
+                'prospecting' => $kpiModel::whereMonth('start_time', now()->month)
+                    ->whereYear('start_time', now()->year)
+                    ->where('visit_purpose', 'prospecting')
+                    ->count(),
+                'follow_up' => $kpiModel::whereMonth('start_time', now()->month)
+                    ->whereYear('start_time', now()->year)
+                    ->where('visit_purpose', 'follow_up')
+                    ->count(),
+                'closing' => $kpiModel::whereMonth('start_time', now()->month)
+                    ->whereYear('start_time', now()->year)
+                    ->where('visit_purpose', 'closing')
+                    ->count(),
+            ];
+
+            // Active prospects (ALL prospects, not just pending)
+            $activeProspects = $kpiModel::with('user:id,name,employee_id')
+                ->whereMonth('start_time', now()->month)
+                ->whereYear('start_time', now()->year)
+                ->latest('start_time')
+                ->limit(20)
+                ->get()
+                ->map(function ($visit) {
+                    return [
+                        'id' => $visit->id,
+                        'client_name' => $visit->client_name,
+                        'employee_name' => $visit->user->name ?? 'Unknown Employee',
+                        'employee_id' => $visit->user->employee_id ?? 'N/A',
+                        'visit_purpose' => $visit->visit_purpose,
+                        'status' => $visit->status,
+                        'potential_value' => $visit->potential_value ?: 0,
+                        'formatted_potential_value' => 'Rp ' . number_format($visit->potential_value ?: 0, 0, ',', '.'),
+                        'start_time' => $visit->start_time->format('Y-m-d H:i:s'),
+                        'address' => $visit->address,
+                        'notes' => $visit->notes,
+                        'visits_count' => $kpiModel::where('client_name', $visit->client_name)->count(),
+                        // Add location data for detail view
+                        'latitude' => $visit->latitude,
+                        'longitude' => $visit->longitude,
+                        'photo_url' => $visit->photo_url,
+                    ];
+                });
+
+            // Pending visits (only actual pending status)
+            $pendingVisits = $kpiModel::with('user:id,name,employee_id')
+                ->where('status', 'pending')
+                ->latest('created_at')
+                ->limit(5)
+                ->get()
+                ->map(function ($visit) {
+                    return [
+                        'id' => $visit->id,
+                        'prospect_name' => $visit->client_name,
+                        'employee_name' => $visit->user->name ?? 'Unknown Employee',
+                        'employee_id' => $visit->user->employee_id ?? 'N/A',
+                        'visit_purpose' => $visit->visit_purpose,
+                        'status' => $visit->status,
+                        'visit_date' => $visit->start_time->format('Y-m-d'),
+                        'start_time' => $visit->start_time->format('d/m/Y H:i'),
+                        'address' => $visit->address,
+                        'latitude' => $visit->latitude,
+                        'longitude' => $visit->longitude,
+                        'photo_url' => $visit->photo_url,
+                    ];
+                });
+
+            // Top performing employees (current month)
+            $topEmployees = $kpiModel::with('user:id,name,employee_id')
+                ->whereMonth('start_time', now()->month)
+                ->whereYear('start_time', now()->year)
+                ->select('user_id')
+                ->selectRaw('COUNT(*) as visit_count')
+                ->selectRaw('SUM(CASE WHEN status = "success" THEN potential_value ELSE 0 END) as total_potential')
+                ->selectRaw('COUNT(CASE WHEN status = "success" THEN 1 END) as success_count')
+                ->groupBy('user_id')
+                ->orderByDesc('total_potential')
+                ->limit(10)
+                ->get()
+                ->map(function ($employee) {
+                    $successRate = $employee->visit_count > 0 ? round(($employee->success_count / $employee->visit_count) * 100, 1) : 0;
+                    return [
+                        'employee_name' => $employee->user->name ?? 'Unknown Employee',
+                        'employee_id' => $employee->user->employee_id ?? 'N/A',
+                        'visit_count' => $employee->visit_count,
+                        'success_count' => $employee->success_count,
+                        'success_rate' => $successRate,
+                        'total_potential' => $employee->total_potential ?: 0,
+                        'formatted_potential' => 'Rp ' . number_format($employee->total_potential ?: 0, 0, ',', '.'),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data KPI analytics berhasil dimuat',
+                'data' => [
+                    'statistics' => [
+                        'total_visits_today' => $totalVisitsToday,
+                        'total_visits_week' => $totalVisitsWeek,
+                        'total_visits_month' => $totalVisitsMonth,
+                        'successful_visits_month' => $successfulVisitsMonth,
+                        'success_rate' => $successRate,
+                        'total_potential_value' => $totalPotentialValue,
+                        'formatted_potential_value' => 'Rp ' . number_format($totalPotentialValue, 0, ',', '.'),
+                        'visits_by_purpose' => $visitsByPurpose,
+                    ],
+                    'active_prospects' => $activeProspects,
+                    'pending_visits' => $pendingVisits,
+                    'top_employees' => $topEmployees,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving KPI analytics: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

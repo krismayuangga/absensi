@@ -1192,24 +1192,920 @@ class _AdminLeaveTabState extends State<AdminLeaveTab> {
   }
 }
 
-class AdminKPITab extends StatelessWidget {
+class AdminKPITab extends StatefulWidget {
   const AdminKPITab({Key? key}) : super(key: key);
 
   @override
+  _AdminKPITabState createState() => _AdminKPITabState();
+}
+
+class _AdminKPITabState extends State<AdminKPITab> {
+  @override
+  void initState() {
+    super.initState();
+    // Load data after frame is built to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadKpiData();
+    });
+  }
+
+  Future<void> _loadKpiData() async {
+    final adminProvider = Provider.of<AdminProvider>(context, listen: false);
+    await adminProvider.loadKpiAnalytics();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.trending_up, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text('KPI Analytics',
-              style: TextStyle(fontSize: 18, color: Colors.grey)),
-          SizedBox(height: 8),
-          Text('Coming Soon...', style: TextStyle(color: Colors.grey)),
+    return Consumer<AdminProvider>(
+      builder: (context, adminProvider, child) {
+        if (adminProvider.isLoading) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (adminProvider.errorMessage != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: Colors.red),
+                SizedBox(height: 16),
+                Text(
+                  adminProvider.errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _loadKpiData,
+                  child: Text('Coba Lagi'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final analytics = adminProvider.kpiAnalytics;
+        if (analytics == null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.analytics_outlined, size: 48),
+                SizedBox(height: 16),
+                Text('Tidak ada data KPI'),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _loadKpiData,
+                  child: Text('Muat Data'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: _loadKpiData,
+          child: SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Statistics Cards - Kompak
+                _buildStatisticsSection(analytics['statistics']),
+                SizedBox(height: 16),
+
+                // Active Prospects - Kompak dengan detail click
+                _buildActiveProspectsSection(analytics['active_prospects']),
+                SizedBox(height: 16),
+
+                // Pending Visits - Kompak dengan detail click
+                _buildPendingVisitsSection(analytics['pending_visits']),
+                SizedBox(height: 16),
+
+                // Top Employees - Kompak
+                _buildTopEmployeesSection(analytics['top_employees']),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatisticsSection(Map<String, dynamic>? stats) {
+    if (stats == null) return SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Statistik Kunjungan',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 2,
+          childAspectRatio: 1.5,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          children: [
+            _buildStatCard(
+              'Hari Ini',
+              '${stats['visits_today'] ?? 0}',
+              Icons.today,
+              Colors.blue,
+            ),
+            _buildStatCard(
+              'Minggu Ini',
+              '${stats['visits_this_week'] ?? 0}',
+              Icons.date_range,
+              Colors.green,
+            ),
+            _buildStatCard(
+              'Bulan Ini',
+              '${stats['visits_this_month'] ?? 0}',
+              Icons.calendar_month,
+              Colors.orange,
+            ),
+            _buildStatCard(
+              'Tingkat Sukses',
+              '${stats['success_rate'] ?? 0}%',
+              Icons.trending_up,
+              Colors.purple,
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        _buildPotentialValueCard(stats['total_potential_value']),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 2,
+      child: Container(
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          gradient: LinearGradient(
+            colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 28, color: color),
+            SizedBox(height: 6),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            SizedBox(height: 3),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPotentialValueCard(dynamic potentialValue) {
+    final value = potentialValue ?? 0;
+    return Card(
+      elevation: 2,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          gradient: LinearGradient(
+            colors: [
+              Colors.teal.withOpacity(0.1),
+              Colors.teal.withOpacity(0.05)
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.account_balance_wallet, size: 32, color: Colors.teal),
+            SizedBox(height: 8),
+            Text(
+              'Total Nilai Potensial',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Rp ${_formatCurrency(value)}',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.teal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveProspectsSection(List<dynamic>? prospects) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Prospek Aktif',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              '${prospects?.length ?? 0} prospek',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        prospects == null || prospects.isEmpty
+            ? Card(
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Icon(Icons.business_center,
+                          size: 40, color: Colors.grey[400]),
+                      SizedBox(height: 12),
+                      Text(
+                        'Tidak ada prospek aktif',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : Column(
+                children: prospects
+                    .take(3)
+                    .map((prospect) => _buildProspectCard(prospect))
+                    .toList(),
+              ),
+      ],
+    );
+  }
+
+  Widget _buildProspectCard(Map<String, dynamic> prospect) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () => _showProspectDetail(prospect),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.blue[100],
+                radius: 20,
+                child: Icon(Icons.business, color: Colors.blue, size: 20),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      prospect['client_name'] ?? 'Nama Tidak Tersedia',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      '${prospect['address'] ?? 'Alamat tidak tersedia'}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'PIC: ${prospect['employee_name'] ?? 'Belum ditentukan'}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    prospect['formatted_potential_value'] ?? 'Rp 0',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                      fontSize: 13,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    '${prospect['visits_count'] ?? 0} kunjungan',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(width: 8),
+              Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPendingVisitsSection(List<dynamic>? visits) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Kunjungan Pending',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              '${visits?.length ?? 0} pending',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        visits == null || visits.isEmpty
+            ? Card(
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Icon(Icons.check_circle,
+                          size: 40, color: Colors.green[400]),
+                      SizedBox(height: 12),
+                      Text(
+                        'Semua kunjungan sudah selesai',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : Column(
+                children: visits
+                    .take(3)
+                    .map((visit) => _buildPendingVisitCard(visit))
+                    .toList(),
+              ),
+      ],
+    );
+  }
+
+  Widget _buildPendingVisitCard(Map<String, dynamic> visit) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () => _showVisitDetail(visit),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.orange[100],
+                radius: 20,
+                child: Icon(Icons.schedule, color: Colors.orange, size: 20),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      visit['client_name'] ?? 'Prospek Tidak Tersedia',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Oleh: ${visit['employee_name'] ?? 'Karyawan tidak tersedia'}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Tgl: ${_formatDate(visit['visit_date'])}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'PENDING',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.orange[800],
+                  ),
+                ),
+              ),
+              SizedBox(width: 8),
+              Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopEmployeesSection(List<dynamic>? employees) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Top Performers',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 12),
+        employees == null || employees.isEmpty
+            ? Card(
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Icon(Icons.people, size: 40, color: Colors.grey[400]),
+                      SizedBox(height: 12),
+                      Text(
+                        'Belum ada data karyawan',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : Column(
+                children: employees.asMap().entries.take(3).map((entry) {
+                  int index = entry.key;
+                  Map<String, dynamic> employee = entry.value;
+                  return _buildTopEmployeeCard(employee, index + 1);
+                }).toList(),
+              ),
+      ],
+    );
+  }
+
+  Widget _buildTopEmployeeCard(Map<String, dynamic> employee, int rank) {
+    Color rankColor;
+    IconData rankIcon;
+
+    switch (rank) {
+      case 1:
+        rankColor = Colors.amber;
+        rankIcon = Icons.emoji_events;
+        break;
+      case 2:
+        rankColor = Colors.grey[400]!;
+        rankIcon = Icons.military_tech;
+        break;
+      case 3:
+        rankColor = Colors.brown[400]!;
+        rankIcon = Icons.workspace_premium;
+        break;
+      default:
+        rankColor = Colors.blue;
+        rankIcon = Icons.star;
+    }
+
+    return Card(
+      margin: EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () => _showEmployeeDetail(employee),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: rankColor.withOpacity(0.1),
+                radius: 20,
+                child: Icon(rankIcon, color: rankColor, size: 20),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      employee['employee_name'] ?? 'Nama Tidak Tersedia',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      '${employee['visit_count'] ?? 0} kunjungan',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Success Rate: ${employee['success_rate'] ?? 0}%',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '#$rank',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: rankColor,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    employee['formatted_potential'] ?? 'Rp 0',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.green,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(width: 8),
+              Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Detail Dialog Functions
+  void _showProspectDetail(Map<String, dynamic> prospect) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.business, color: Colors.blue),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                prospect['name'] ?? 'Detail Prospek',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow(
+                  'Nama Prospek', prospect['client_name'] ?? 'Tidak tersedia'),
+              _buildDetailRow(
+                  'Alamat', prospect['address'] ?? 'Tidak tersedia'),
+              _buildDetailRow('PIC Karyawan',
+                  prospect['employee_name'] ?? 'Belum ditentukan'),
+              _buildDetailRow('Tujuan Kunjungan',
+                  prospect['visit_purpose'] ?? 'Tidak tersedia'),
+              _buildDetailRow('Nilai Potensial',
+                  prospect['formatted_potential_value'] ?? 'Rp 0'),
+              _buildDetailRow('Status', prospect['status'] ?? 'pending'),
+              SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info, size: 16, color: Colors.blue),
+                        SizedBox(width: 4),
+                        Text(
+                          'Informasi Tambahan',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Fitur detail lokasi, foto kunjungan, dan riwayat lengkap akan segera ditambahkan.',
+                      style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup'),
+          ),
         ],
       ),
     );
+  }
+
+  void _showVisitDetail(Map<String, dynamic> visit) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.schedule, color: Colors.orange),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Detail Kunjungan Pending',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow(
+                  'Prospek', visit['prospect_name'] ?? 'Tidak tersedia'),
+              _buildDetailRow(
+                  'Karyawan', visit['employee_name'] ?? 'Tidak tersedia'),
+              _buildDetailRow(
+                  'Tanggal Kunjungan', _formatDate(visit['visit_date'])),
+              _buildDetailRow('Status', 'PENDING'),
+              _buildDetailRow('Waktu Dibuat', _formatDate(visit['created_at'])),
+              SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.camera_alt, size: 16, color: Colors.orange),
+                        SizedBox(width: 4),
+                        Text(
+                          'Foto & Lokasi',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Foto lokasi, GPS coordinates, dan detail kunjungan akan tampil setelah kunjungan selesai.',
+                      style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEmployeeDetail(Map<String, dynamic> employee) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.person, color: Colors.purple),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                employee['name'] ?? 'Detail Karyawan',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow(
+                  'Nama Karyawan', employee['name'] ?? 'Tidak tersedia'),
+              _buildDetailRow('Total Kunjungan',
+                  '${employee['visits_count'] ?? 0} kunjungan'),
+              _buildDetailRow(
+                  'Success Rate', '${employee['success_rate'] ?? 0}%'),
+              _buildDetailRow('Total Nilai Potensial',
+                  'Rp ${_formatCurrency(employee['total_potential'] ?? 0)}'),
+              _buildDetailRow('Status', 'Aktif'),
+              SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.purple[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.analytics, size: 16, color: Colors.purple),
+                        SizedBox(width: 4),
+                        Text(
+                          'Analisis Performa',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.purple[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Grafik performa, riwayat kunjungan detail, dan analisis mendalam akan ditampilkan di halaman khusus.',
+                      style: TextStyle(fontSize: 12, color: Colors.purple[700]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          Text(': '),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatCurrency(dynamic value) {
+    if (value == null) return '0';
+    final number = double.tryParse(value.toString()) ?? 0;
+    if (number >= 1000000000) {
+      return '${(number / 1000000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}Jt';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(0)}K';
+    }
+    return number.toStringAsFixed(0);
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'N/A';
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return dateStr;
+    }
   }
 }
 
@@ -2819,5 +3715,419 @@ class AdminReportsTab extends StatelessWidget {
     } catch (e) {
       return timeStr;
     }
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'success':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'failed':
+        return Colors.red;
+      case 'progress':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _showProspectDetail(Map<String, dynamic> prospect) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(maxHeight: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.business, color: Colors.blue, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        prospect['client_name'] ?? 'Detail Prospek',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Basic Info
+                      _buildDetailRow(
+                          'Nama Klien', prospect['client_name'] ?? 'N/A'),
+                      _buildDetailRow(
+                          'PIC', prospect['employee_name'] ?? 'N/A'),
+                      _buildDetailRow('Alamat', prospect['address'] ?? 'N/A'),
+                      _buildDetailRow('Tujuan Kunjungan',
+                          prospect['visit_purpose'] ?? 'N/A'),
+                      _buildDetailRow('Status', prospect['status'] ?? 'N/A'),
+                      _buildDetailRow('Nilai Potensial',
+                          'Rp ${_formatCurrency(prospect['potential_value'] ?? 0)}'),
+                      _buildDetailRow('Waktu Kunjungan',
+                          _formatDate(prospect['start_time'])),
+
+                      if (prospect['notes'] != null &&
+                          prospect['notes'].toString().isNotEmpty) ...[
+                        SizedBox(height: 16),
+                        Text(
+                          'Catatan:',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Text(prospect['notes'].toString()),
+                        ),
+                      ],
+
+                      // Photo Section
+                      if (prospect['photo_url'] != null &&
+                          prospect['photo_url'].toString().isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          'Foto Kunjungan:',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              prospect['photo_url'].toString(),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[100],
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image,
+                                          size: 48, color: Colors.grey[400]),
+                                      SizedBox(height: 8),
+                                      Text('Foto tidak dapat dimuat',
+                                          style: TextStyle(
+                                              color: Colors.grey[600])),
+                                    ],
+                                  ),
+                                );
+                              },
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  color: Colors.grey[100],
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+
+                      // Location Section
+                      if (prospect['latitude'] != null &&
+                          prospect['longitude'] != null) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          'Lokasi Kunjungan:',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.location_on, color: Colors.blue),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Koordinat GPS:',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600]),
+                                    ),
+                                    Text(
+                                      'Lat: ${prospect['latitude']}, Lng: ${prospect['longitude']}',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  // TODO: Open in maps
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text('Membuka di peta...')),
+                                  );
+                                },
+                                icon:
+                                    Icon(Icons.open_in_new, color: Colors.blue),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          Text(': '),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showVisitDetail(Map<String, dynamic> visit) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(maxHeight: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule, color: Colors.orange, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Detail Kunjungan Pending',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow(
+                          'Nama Prospek',
+                          visit['prospect_name'] ??
+                              visit['client_name'] ??
+                              'N/A'),
+                      _buildDetailRow('PIC', visit['employee_name'] ?? 'N/A'),
+                      _buildDetailRow(
+                          'Tanggal Kunjungan', visit['start_time'] ?? 'N/A'),
+                      _buildDetailRow('Status', visit['status'] ?? 'N/A'),
+                      _buildDetailRow('Alamat', visit['address'] ?? 'N/A'),
+
+                      // Photo Section
+                      if (visit['photo_url'] != null &&
+                          visit['photo_url'].toString().isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          'Foto Kunjungan:',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              visit['photo_url'].toString(),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[100],
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image,
+                                          size: 48, color: Colors.grey[400]),
+                                      SizedBox(height: 8),
+                                      Text('Foto tidak dapat dimuat',
+                                          style: TextStyle(
+                                              color: Colors.grey[600])),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+
+                      // Location Section
+                      if (visit['latitude'] != null &&
+                          visit['longitude'] != null) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          'Lokasi Kunjungan:',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.orange[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.location_on, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Koordinat GPS:',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600]),
+                                    ),
+                                    Text(
+                                      'Lat: ${visit['latitude']}, Lng: ${visit['longitude']}',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text('Membuka di peta...')),
+                                  );
+                                },
+                                icon: Icon(Icons.open_in_new,
+                                    color: Colors.orange),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

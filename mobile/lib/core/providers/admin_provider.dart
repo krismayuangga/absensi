@@ -61,6 +61,10 @@ class AdminProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get departments => _departments;
   List<Map<String, dynamic>> get positions => _positions;
 
+  // KPI Analytics
+  Map<String, dynamic>? _kpiAnalytics;
+  Map<String, dynamic>? get kpiAnalytics => _kpiAnalytics;
+
   // Dashboard methods
   Future<void> loadDashboardStats() async {
     print('🔄 ADMIN: Starting loadDashboardStats...');
@@ -515,6 +519,29 @@ class AdminProvider extends ChangeNotifier {
       _errorMessage = 'Error: $e';
       debugPrint('Error rejecting leave: $e');
       return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // KPI Analytics methods
+  Future<void> loadKpiAnalytics() async {
+    print('🔄 ADMIN: Starting loadKpiAnalytics...');
+    _setLoading(true);
+    try {
+      final result = await _adminService.getKpiAnalytics();
+      print('📊 ADMIN: KPI Analytics API result: $result');
+
+      if (result['success'] == true) {
+        _kpiAnalytics = result['data'];
+        print('✅ ADMIN: KPI analytics loaded successfully');
+        _errorMessage = null;
+      } else {
+        _errorMessage = result['message'] ?? 'Failed to load KPI analytics';
+      }
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+      debugPrint('Error loading KPI analytics: $e');
     } finally {
       _setLoading(false);
     }
