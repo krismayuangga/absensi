@@ -38,6 +38,7 @@ dependencies:
   
   # Camera & Images
   image_picker: ^1.0.4
+  cached_network_image: ^3.3.0
   # camera: ^0.10.5+5
   
   # QR Code

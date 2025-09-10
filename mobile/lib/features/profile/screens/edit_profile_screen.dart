@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
 
 import '../../../core/theme/app_theme.dart';
@@ -347,8 +348,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
             backgroundImage: _profileImage != null
                 ? FileImage(_profileImage!)
-                : (user?.avatar != null ? NetworkImage(user!.avatar!) : null)
-                    as ImageProvider?,
+                : (user?.avatar != null
+                    ? CachedNetworkImageProvider(user!.avatar!)
+                    : null) as ImageProvider?,
             child: _profileImage == null && user?.avatar == null
                 ? Icon(
                     Icons.person,

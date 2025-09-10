@@ -3,7 +3,7 @@ import '../config/app_config.dart';
 
 class AdminContentService {
   final Dio _dio = Dio();
-  static const String baseUrl = 'http://10.0.2.2:8000/api/v1';
+  static const String baseUrl = 'http://10.0.2.2:8000/api';
 
   AdminContentService() {
     _dio.options.baseUrl = baseUrl;
@@ -238,7 +238,7 @@ class AdminContentService {
 
       print('🔄 Getting admin media...');
       final response = await _dio.get(
-        '/admin/content/media',
+        '/info-media/media',
         queryParameters: queryParams,
       );
 

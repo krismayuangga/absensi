@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/providers/info_media_provider.dart';
 
 class MediaGalleryScreen extends StatefulWidget {
@@ -173,23 +174,53 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
                       decoration: BoxDecoration(
                         borderRadius:
                             BorderRadius.vertical(top: Radius.circular(12.r)),
-                        image: fileUrl != null
-                            ? DecorationImage(
-                                image: NetworkImage(fileUrl),
-                                fit: BoxFit.cover,
-                                onError: (exception, stackTrace) {
-                                  print('Error loading image: $exception');
-                                },
-                              )
-                            : null,
                       ),
-                      child: fileUrl == null
-                          ? Icon(
-                              Icons.image,
-                              size: 40.w,
-                              color: Colors.grey.shade400,
+                      child: fileUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(12.r)),
+                              child: CachedNetworkImage(
+                                imageUrl: fileUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  color: Colors.grey.shade200,
+                                  child: Icon(
+                                    Icons.image,
+                                    size: 40,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: Colors.grey.shade200,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.broken_image,
+                                        size: 40,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      SizedBox(height: 8.h),
+                                      Text(
+                                        'Gagal memuat',
+                                        style: TextStyle(
+                                          fontSize: 10.sp,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             )
-                          : null,
+                          : Container(
+                              color: Colors.grey.shade200,
+                              child: Icon(
+                                Icons.image,
+                                size: 40,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
                     )
                   else
                     Center(
@@ -230,7 +261,6 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
                 padding: EdgeInsets.all(8.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       title,
@@ -244,14 +274,16 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
                     ),
                     SizedBox(height: 2.h),
                     if (description.isNotEmpty)
-                      Text(
-                        description,
-                        style: GoogleFonts.inter(
-                          fontSize: 10.sp,
-                          color: theme.textTheme.bodyMedium?.color,
+                      Flexible(
+                        child: Text(
+                          description,
+                          style: GoogleFonts.inter(
+                            fontSize: 10.sp,
+                            color: theme.textTheme.bodyMedium?.color,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     const Spacer(),
                     Row(
@@ -424,9 +456,42 @@ class _MediaDetailDialog extends StatelessWidget {
                         height: 200.h,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12.r),
-                          image: DecorationImage(
-                            image: NetworkImage(fileUrl),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12.r),
+                          child: CachedNetworkImage(
+                            imageUrl: fileUrl,
                             fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey.shade200,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFF4A9B8E)),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: Colors.grey.shade200,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.broken_image,
+                                    size: 48,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  SizedBox(height: 8.h),
+                                  Text(
+                                    'Gagal memuat gambar',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       )

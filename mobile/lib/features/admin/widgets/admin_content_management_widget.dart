@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
 import '../../../core/providers/admin_content_provider.dart';
 import '../../../core/theme/app_theme.dart';
@@ -559,18 +560,70 @@ class _MediaManagementTabState extends State<MediaManagementTab> {
                                             const BorderRadius.vertical(
                                           top: Radius.circular(4),
                                         ),
-                                        image: media['file_path'] != null
-                                            ? DecorationImage(
-                                                image: NetworkImage(
-                                                    media['file_path']),
-                                                fit: BoxFit.cover,
-                                              )
-                                            : null,
                                       ),
-                                      child: media['file_path'] == null
-                                          ? const Icon(Icons.image,
-                                              size: 48, color: Colors.grey)
-                                          : null,
+                                      child: media['file_path'] != null
+                                          ? ClipRRect(
+                                              borderRadius:
+                                                  const BorderRadius.vertical(
+                                                top: Radius.circular(4),
+                                              ),
+                                              child: CachedNetworkImage(
+                                                imageUrl: media['file_path'],
+                                                fit: BoxFit.cover,
+                                                placeholder: (context, url) =>
+                                                    Container(
+                                                  color: Colors.grey.shade200,
+                                                  child: Center(
+                                                    child: Icon(
+                                                      Icons.image,
+                                                      size: 32,
+                                                      color:
+                                                          Colors.grey.shade400,
+                                                    ),
+                                                  ),
+                                                ),
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        Container(
+                                                  color: Colors.grey.shade200,
+                                                  child: Center(
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(
+                                                          Icons.broken_image,
+                                                          size: 32,
+                                                          color: Colors
+                                                              .grey.shade400,
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 4),
+                                                        Text(
+                                                          'Error',
+                                                          style: TextStyle(
+                                                            fontSize: 10,
+                                                            color: Colors
+                                                                .grey.shade600,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : Container(
+                                              color: Colors.grey.shade200,
+                                              child: Center(
+                                                child: Icon(
+                                                  Icons.image,
+                                                  size: 32,
+                                                  color: Colors.grey.shade400,
+                                                ),
+                                              ),
+                                            ),
                                     ),
                                   ),
                                   Padding(
