@@ -49,7 +49,7 @@ class AdminContentService {
 
       print('🔄 Getting admin announcements...');
       final response = await _dio.get(
-        '/admin/content/announcements',
+        '/info-media/announcements', // Use working endpoint
         queryParameters: queryParams,
       );
 
@@ -103,7 +103,7 @@ class AdminContentService {
       print('📤 Request data: $data');
 
       final response = await _dio.post(
-        '/admin/content/announcements',
+        '/info-media/announcements', // Use working endpoint
         data: data,
       );
 
@@ -162,7 +162,7 @@ class AdminContentService {
       };
 
       final response = await _dio.put(
-        '/admin/content/announcements/$id',
+        '/info-media/announcements/$id', // Use working endpoint
         data: data,
       );
 
@@ -192,7 +192,8 @@ class AdminContentService {
     try {
       _addAuthToken();
 
-      final response = await _dio.delete('/admin/content/announcements/$id');
+      final response = await _dio
+          .delete('/info-media/announcements/$id'); // Use working endpoint
 
       if (response.statusCode == 200) {
         return {
@@ -282,7 +283,7 @@ class AdminContentService {
 
       print('🔄 Uploading media...');
       final response = await _dio.post(
-        '/admin/content/media',
+        '/info-media/media', // Use working endpoint
         data: formData,
       );
 
@@ -318,7 +319,8 @@ class AdminContentService {
     try {
       _addAuthToken();
 
-      final response = await _dio.delete('/admin/content/media/$id');
+      final response =
+          await _dio.delete('/info-media/media/$id'); // Use working endpoint
 
       if (response.statusCode == 200) {
         return {
@@ -347,7 +349,8 @@ class AdminContentService {
     try {
       _addAuthToken();
 
-      final response = await _dio.get('/admin/content/stats');
+      final response =
+          await _dio.get('/info-media/stats'); // Use working endpoint
 
       if (response.statusCode == 200) {
         return {

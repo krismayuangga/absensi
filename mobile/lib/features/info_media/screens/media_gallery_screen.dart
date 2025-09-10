@@ -258,30 +258,31 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
             // Content
             Expanded(
               child: Padding(
-                padding: EdgeInsets.all(8.w),
+                padding: EdgeInsets.all(6.w), // Reduced padding
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       title,
                       style: GoogleFonts.poppins(
-                        fontSize: 12.sp,
+                        fontSize: 11.sp, // Slightly smaller
                         fontWeight: FontWeight.w600,
                         color: theme.textTheme.bodyLarge?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 2.h),
+                    SizedBox(height: 1.h), // Reduced height
                     if (description.isNotEmpty)
                       Flexible(
                         child: Text(
                           description,
                           style: GoogleFonts.inter(
-                            fontSize: 10.sp,
+                            fontSize: 9.sp, // Smaller font
                             color: theme.textTheme.bodyMedium?.color,
                           ),
-                          maxLines: 2,
+                          maxLines: 1, // Reduced to 1 line
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -294,15 +295,15 @@ class _MediaGalleryScreenState extends State<MediaGalleryScreen>
                             children: [
                               Icon(
                                 Icons.access_time,
-                                size: 9.w,
+                                size: 8.w, // Smaller icon
                                 color: Colors.grey.shade500,
                               ),
-                              SizedBox(width: 2.w),
+                              SizedBox(width: 1.w), // Reduced spacing
                               Expanded(
                                 child: Text(
                                   createdAt,
                                   style: GoogleFonts.inter(
-                                    fontSize: 8.sp,
+                                    fontSize: 7.sp, // Smaller font
                                     color: Colors.grey.shade500,
                                   ),
                                   overflow: TextOverflow.ellipsis,
