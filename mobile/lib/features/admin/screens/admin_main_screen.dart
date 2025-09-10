@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/providers/admin_provider.dart';
 import '../../../core/providers/admin_content_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({Key? key}) : super(key: key);
@@ -148,7 +149,7 @@ class AdminDashboardTab extends StatelessWidget {
                         child: _buildStatCard(
                           context,
                           'Total Employees',
-                          '${stats['stats']?['total_employees'] ?? 0}',
+                          '${stats?['total_karyawan'] ?? 0}',
                           Icons.people,
                           Colors.blue,
                         ),
@@ -158,7 +159,7 @@ class AdminDashboardTab extends StatelessWidget {
                         child: _buildStatCard(
                           context,
                           'Today Attendance',
-                          '${stats['stats']?['today_attendance'] ?? 0}',
+                          '${stats?['hadir_hari_ini'] ?? 0}',
                           Icons.access_time,
                           Colors.green,
                         ),
@@ -172,7 +173,7 @@ class AdminDashboardTab extends StatelessWidget {
                         child: _buildStatCard(
                           context,
                           'Attendance %',
-                          '${stats['stats']?['attendance_percentage'] ?? 0}%',
+                          '${stats?['persentase_kehadiran'] ?? 0}%',
                           Icons.percent,
                           Colors.orange,
                         ),
@@ -182,7 +183,7 @@ class AdminDashboardTab extends StatelessWidget {
                         child: _buildStatCard(
                           context,
                           'Pending Leaves',
-                          '${stats['stats']?['pending_leaves'] ?? 0}',
+                          '${stats?['cuti_pending'] ?? 0}',
                           Icons.pending_actions,
                           Colors.red,
                         ),
@@ -284,21 +285,22 @@ class AdminDashboardTab extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).primaryColor,
           child: Icon(
-            _getActivityIcon(activity['action'] ?? ''),
+            _getActivityIcon(activity['aksi'] ?? ''),
             color: Colors.white,
             size: 20,
           ),
         ),
         title: Text(
-          activity['employee_name'] ?? 'Unknown Employee',
+          activity['nama_karyawan'] ?? 'Unknown Employee',
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(activity['action'] ?? 'Unknown action'),
             Text(
-              activity['time'] ?? '',
+                '${activity['aksi'] ?? 'Unknown action'} - ${activity['kode_karyawan'] ?? 'N/A'}'),
+            Text(
+              '${activity['tanggal'] ?? ''} ${activity['waktu'] ?? ''}',
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 12,
@@ -327,6 +329,10 @@ class AdminDashboardTab extends StatelessWidget {
 
   IconData _getActivityIcon(String action) {
     switch (action.toLowerCase()) {
+      case 'masuk':
+        return Icons.login;
+      case 'keluar':
+        return Icons.logout;
       case 'clock_in':
         return Icons.login;
       case 'clock_out':
@@ -343,11 +349,18 @@ class AdminDashboardTab extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'present':
+      case 'tepat waktu':
+      case 'normal':
         return Colors.green;
       case 'late':
+      case 'terlambat':
         return Colors.orange;
       case 'absent':
         return Colors.red;
+      case 'pulang cepat':
+        return Colors.orange.shade300;
+      case 'lembur':
+        return Colors.blue;
       default:
         return Colors.grey;
     }
@@ -794,25 +807,363 @@ class _AdminSettingsTabState extends State<AdminSettingsTab>
   }
 }
 
-// Add new placeholder tabs
-class AdminLeaveTab extends StatelessWidget {
+// Leave Management Tab with real data
+class AdminLeaveTab extends StatefulWidget {
   const AdminLeaveTab({Key? key}) : super(key: key);
 
   @override
+  State<AdminLeaveTab> createState() => _AdminLeaveTabState();
+}
+
+class _AdminLeaveTabState extends State<AdminLeaveTab> {
+  String? _selectedStatus = 'pending';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminProvider>().loadLeaveRequests(refresh: true);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Consumer<AdminProvider>(
+      builder: (context, adminProvider, child) {
+        return Column(
+          children: [
+            // Filter Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.grey[50],
+              child: Row(
+                children: [
+                  const Text('Status:',
+                      style: TextStyle(fontWeight: FontWeight.w500)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedStatus,
+                      decoration: const InputDecoration(
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                            value: null, child: Text('Semua Status')),
+                        DropdownMenuItem(
+                            value: 'pending', child: Text('Pending')),
+                        DropdownMenuItem(
+                            value: 'approved', child: Text('Disetujui')),
+                        DropdownMenuItem(
+                            value: 'rejected', child: Text('Ditolak')),
+                      ],
+                      onChanged: (value) {
+                        setState(() => _selectedStatus = value);
+                        context.read<AdminProvider>().loadLeaveRequests(
+                              refresh: true,
+                              status: value,
+                            );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      context
+                          .read<AdminProvider>()
+                          .loadLeaveRequests(refresh: true);
+                    },
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Refresh'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Leave Requests List
+            Expanded(
+              child: adminProvider.isLoadingLeaves
+                  ? const Center(child: CircularProgressIndicator())
+                  : adminProvider.leaveRequests.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inbox_outlined,
+                                  size: 64, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text('Belum ada pengajuan cuti',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.grey)),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: adminProvider.leaveRequests.length,
+                          itemBuilder: (context, index) {
+                            final leave = adminProvider.leaveRequests[index];
+                            return _buildLeaveCard(
+                                context, leave, adminProvider);
+                          },
+                        ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildLeaveCard(BuildContext context, Map<String, dynamic> leave,
+      AdminProvider adminProvider) {
+    final status = leave['status'] ?? 'pending';
+    final statusColor = _getLeaveStatusColor(status);
+    final statusText = _getLeaveStatusText(status);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          backgroundColor: statusColor,
+          child: Icon(
+            _getLeaveStatusIcon(status),
+            color: Colors.white,
+            size: 20,
+          ),
+        ),
+        title: Text(
+          leave['user']?['name'] ?? 'Unknown Employee',
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ID: ${leave['user']?['employee_id'] ?? 'N/A'}'),
+            Text('Jenis: ${leave['type'] ?? 'N/A'}'),
+            Text(
+                '${_formatDate(leave['start_date'])} - ${_formatDate(leave['end_date'])}'),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: statusColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                statusText,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
         children: [
-          Icon(Icons.event_busy, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text('Leave Management',
-              style: TextStyle(fontSize: 18, color: Colors.grey)),
-          SizedBox(height: 8),
-          Text('Coming Soon...', style: TextStyle(color: Colors.grey)),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Alasan:',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+                Text(leave['reason'] ?? 'Tidak ada keterangan'),
+                const SizedBox(height: 12),
+                if (leave['notes'] != null &&
+                    leave['notes'].toString().isNotEmpty) ...[
+                  const Text('Catatan Admin:',
+                      style: TextStyle(fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 4),
+                  Text(leave['notes']),
+                  const SizedBox(height: 12),
+                ],
+                if (status == 'pending') ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _approveLeave(
+                              context, leave['id'], adminProvider),
+                          icon: const Icon(Icons.check, size: 18),
+                          label: const Text('Setujui'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () =>
+                              _rejectLeave(context, leave['id'], adminProvider),
+                          icon: const Icon(Icons.close, size: 18),
+                          label: const Text('Tolak'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Color _getLeaveStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      case 'pending':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getLeaveStatusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return 'Disetujui';
+      case 'rejected':
+        return 'Ditolak';
+      case 'pending':
+        return 'Pending';
+      default:
+        return status;
+    }
+  }
+
+  IconData _getLeaveStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return Icons.check_circle;
+      case 'rejected':
+        return Icons.cancel;
+      case 'pending':
+        return Icons.schedule;
+      default:
+        return Icons.help;
+    }
+  }
+
+  void _approveLeave(
+      BuildContext context, int leaveId, AdminProvider adminProvider) {
+    _showLeaveActionDialog(
+      context,
+      'Setujui Cuti',
+      'Apakah Anda yakin ingin menyetujui pengajuan cuti ini?',
+      () async {
+        final success = await adminProvider.approveLeave(leaveId, '');
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pengajuan cuti berhasil disetujui')),
+          );
+        }
+      },
+    );
+  }
+
+  void _rejectLeave(
+      BuildContext context, int leaveId, AdminProvider adminProvider) {
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tolak Cuti'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Berikan alasan penolakan:'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Masukkan alasan penolakan...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await adminProvider.rejectLeave(
+                leaveId,
+                reasonController.text.trim(),
+              );
+              if (success && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Pengajuan cuti berhasil ditolak')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Tolak', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLeaveActionDialog(
+    BuildContext context,
+    String title,
+    String message,
+    VoidCallback onConfirm,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              onConfirm();
+            },
+            child: const Text('Ya'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method untuk format tanggal
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '-';
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      return dateStr;
+    }
   }
 }
 
@@ -1092,17 +1443,18 @@ class _AdminAttendanceTabState extends State<AdminAttendanceTab> {
           ),
         ),
         title: Text(
-          attendance['employee']?['name'] ?? 'Unknown Employee',
+          attendance['user']?['name'] ?? 'Unknown Employee',
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Tanggal: ${attendance['date'] ?? 'N/A'}'),
-            if (attendance['clock_in'] != null)
-              Text('Masuk: ${attendance['clock_in']}'),
-            if (attendance['clock_out'] != null)
-              Text('Keluar: ${attendance['clock_out']}'),
+            Text('ID: ${attendance['user']?['employee_id'] ?? 'N/A'}'),
+            Text('Tanggal: ${_formatDate(attendance['date'])}'),
+            if (attendance['clock_in_time'] != null)
+              Text('Masuk: ${_formatTime(attendance['clock_in_time'])}'),
+            if (attendance['clock_out_time'] != null)
+              Text('Keluar: ${_formatTime(attendance['clock_out_time'])}'),
           ],
         ),
         trailing: Container(
@@ -1128,11 +1480,18 @@ class _AdminAttendanceTabState extends State<AdminAttendanceTab> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'present':
+      case 'tepat waktu':
+      case 'normal':
         return Colors.green;
       case 'late':
+      case 'terlambat':
         return Colors.orange;
       case 'absent':
         return Colors.red;
+      case 'pulang cepat':
+        return Colors.orange.shade300;
+      case 'lembur':
+        return Colors.blue;
       default:
         return Colors.grey;
     }
@@ -1186,6 +1545,32 @@ class _AdminAttendanceTabState extends State<AdminAttendanceTab> {
           date: _selectedDate,
           status: _selectedStatus,
         );
+  }
+
+  // Helper methods untuk format tanggal dan waktu
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '-';
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  String _formatTime(String? timeStr) {
+    if (timeStr == null || timeStr.isEmpty) return '-';
+    try {
+      final time = DateTime.parse('2000-01-01 $timeStr');
+      return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      try {
+        final time = DateTime.parse(timeStr);
+        return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+      } catch (e2) {
+        return timeStr;
+      }
+    }
   }
 }
 
@@ -2378,5 +2763,36 @@ class AdminReportsTab extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Helper functions for date and time formatting
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'N/A';
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd MMM yyyy', 'id_ID').format(date);
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  String _formatTime(String? timeStr) {
+    if (timeStr == null) return 'N/A';
+    try {
+      // Handle both full datetime and time only
+      if (timeStr.contains('T')) {
+        final dateTime = DateTime.parse(timeStr);
+        return DateFormat('HH:mm').format(dateTime);
+      } else {
+        // Assume it's already time format HH:mm:ss
+        final parts = timeStr.split(':');
+        if (parts.length >= 2) {
+          return '${parts[0]}:${parts[1]}';
+        }
+      }
+      return timeStr;
+    } catch (e) {
+      return timeStr;
+    }
   }
 }

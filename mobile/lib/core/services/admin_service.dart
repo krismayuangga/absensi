@@ -27,9 +27,13 @@ class AdminService {
   /// Get dashboard statistics
   Future<Map<String, dynamic>> getDashboardStats() async {
     try {
+      print('🔄 ADMIN SERVICE: Calling dashboard stats API...');
       _addAuthToken();
 
       final response = await _dio.get('/admin/dashboard/stats');
+      print(
+          '📊 ADMIN SERVICE: Dashboard response status: ${response.statusCode}');
+      print('📊 ADMIN SERVICE: Dashboard response data: ${response.data}');
 
       if (response.statusCode == 200) {
         return {
@@ -421,6 +425,84 @@ class AdminService {
           'success': false,
           'message':
               e.response?.data['message'] ?? 'Failed to get employee data',
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
+
+  /// Approve leave request
+  Future<Map<String, dynamic>> approveLeave(int leaveId, String notes) async {
+    try {
+      _addAuthToken();
+
+      final data = {
+        'status': 'approved',
+        'notes': notes,
+      };
+
+      final response =
+          await _dio.put('/admin/leaves/$leaveId/status', data: data);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Leave approved successfully',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': response.data['message'] ?? 'Failed to approve leave',
+      };
+    } catch (e) {
+      print('❌ Error approving leave: $e');
+      if (e is DioException && e.response != null) {
+        return {
+          'success': false,
+          'message': e.response?.data['message'] ?? 'Failed to approve leave',
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
+
+  /// Reject leave request
+  Future<Map<String, dynamic>> rejectLeave(int leaveId, String notes) async {
+    try {
+      _addAuthToken();
+
+      final data = {
+        'status': 'rejected',
+        'notes': notes,
+      };
+
+      final response =
+          await _dio.put('/admin/leaves/$leaveId/status', data: data);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Leave rejected successfully',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': response.data['message'] ?? 'Failed to reject leave',
+      };
+    } catch (e) {
+      print('❌ Error rejecting leave: $e');
+      if (e is DioException && e.response != null) {
+        return {
+          'success': false,
+          'message': e.response?.data['message'] ?? 'Failed to reject leave',
         };
       }
       return {

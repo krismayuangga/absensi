@@ -63,12 +63,14 @@ class AdminProvider extends ChangeNotifier {
 
   // Dashboard methods
   Future<void> loadDashboardStats() async {
+    print('🔄 ADMIN: Starting loadDashboardStats...');
     _setLoading(true);
     try {
       final result = await _adminService.getDashboardStats();
+      print('📊 ADMIN: Dashboard API result: $result');
 
       if (result['success'] == true) {
-        // Update untuk field bahasa Indonesia
+        // Update untuk field bahasa Indonesia yang benar
         _dashboardStats = result['data']?['statistik'];
 
         // Safe parsing for recent activities - bahasa Indonesia
@@ -82,6 +84,8 @@ class AdminProvider extends ChangeNotifier {
           }
         }
 
+        print('✅ ADMIN: Dashboard stats loaded: $_dashboardStats');
+        print('✅ ADMIN: Recent activities count: ${_recentActivities.length}');
         _errorMessage = null;
       } else {
         _errorMessage = result['message'] ?? 'Failed to load dashboard stats';
@@ -461,6 +465,51 @@ class AdminProvider extends ChangeNotifier {
       _errorMessage = 'Error getting employee: $e';
       notifyListeners();
       return null;
+    }
+  }
+
+  // Leave approval methods
+  Future<bool> approveLeave(int leaveId, String notes) async {
+    _setLoading(true);
+    try {
+      final result = await _adminService.approveLeave(leaveId, notes);
+
+      if (result['success'] == true) {
+        await loadLeaveRequests(refresh: true);
+        _errorMessage = null;
+        return true;
+      } else {
+        _errorMessage = result['message'] ?? 'Failed to approve leave';
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+      debugPrint('Error approving leave: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> rejectLeave(int leaveId, String notes) async {
+    _setLoading(true);
+    try {
+      final result = await _adminService.rejectLeave(leaveId, notes);
+
+      if (result['success'] == true) {
+        await loadLeaveRequests(refresh: true);
+        _errorMessage = null;
+        return true;
+      } else {
+        _errorMessage = result['message'] ?? 'Failed to reject leave';
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+      debugPrint('Error rejecting leave: $e');
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
