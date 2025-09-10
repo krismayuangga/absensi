@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/profile_provider.dart';
-import '../admin/admin_main_screen.dart';
+import '../admin/screens/admin_main_screen.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/notification_settings_screen.dart';

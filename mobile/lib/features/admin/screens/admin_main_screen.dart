@@ -15,10 +15,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
 
   final List<Widget> _screens = [
     const AdminDashboardTab(),
-    const AdminEmployeesTab(),
-    const AdminAttendanceTab(),
-    const AdminContentTab(),
-    const AdminReportsTab(),
+    const AdminManagementTab(),
+    const AdminAnalyticsTab(),
+    const AdminSettingsTab(),
   ];
 
   @override
@@ -51,26 +50,29 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
+        selectedFontSize: 10,
+        unselectedFontSize: 9,
+        iconSize: 20,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
+        elevation: 8,
+        backgroundColor: Colors.white,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Employees',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.access_time),
-            label: 'Attendance',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.article),
-            label: 'Content',
+            icon: Icon(Icons.groups),
+            label: 'Manajemen',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.analytics),
-            label: 'Reports',
+            label: 'Analitik',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Pengaturan',
           ),
         ],
       ),
@@ -352,25 +354,838 @@ class AdminDashboardTab extends StatelessWidget {
   }
 }
 
-class AdminEmployeesTab extends StatelessWidget {
+class AdminEmployeesTab extends StatefulWidget {
   const AdminEmployeesTab({Key? key}) : super(key: key);
 
   @override
+  State<AdminEmployeesTab> createState() => _AdminEmployeesTabState();
+}
+
+class _AdminEmployeesTabState extends State<AdminEmployeesTab> {
+  @override
+  void initState() {
+    super.initState();
+    // Load employees when tab opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminProvider>().loadEmployees(refresh: true);
+      context.read<AdminProvider>().loadMasterData();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Employees Management'),
+    return Consumer<AdminProvider>(
+      builder: (context, adminProvider, child) {
+        return Column(
+          children: [
+            // Header with Add Button
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Text(
+                    'Data Karyawan',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // TODO: Add employee dialog
+                    },
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Tambah'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Employee List
+            Expanded(
+              child: adminProvider.isLoadingEmployees &&
+                      adminProvider.employees.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : adminProvider.employees.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.people_outline,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Belum ada data karyawan',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Klik tombol Tambah untuk menambah karyawan',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.grey[500],
+                                    ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            await adminProvider.loadEmployees(refresh: true);
+                          },
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: adminProvider.employees.length +
+                                (adminProvider.hasMoreEmployees ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == adminProvider.employees.length) {
+                                // Load more indicator
+                                if (adminProvider.isLoadingEmployees) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                        child: CircularProgressIndicator()),
+                                  );
+                                } else if (adminProvider.hasMoreEmployees) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        adminProvider.loadEmployees();
+                                      },
+                                      child: const Text('Load More'),
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              }
+
+                              final employee = adminProvider.employees[index];
+                              return _buildEmployeeCard(
+                                  context, employee, adminProvider);
+                            },
+                          ),
+                        ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEmployeeCard(BuildContext context, Map<String, dynamic> employee,
+      AdminProvider provider) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).primaryColor,
+          child: Text(
+            _getEmployeeInitial(employee['name']),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          employee['name'] ?? 'Unknown',
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                'ID: ${employee['employee_id'] ?? employee['employee_code'] ?? 'N/A'}'),
+            Text('Email: ${employee['email'] ?? 'N/A'}'),
+            Text('Jabatan: ${_getEmployeePosition(employee)}'),
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            switch (value) {
+              case 'edit':
+                // TODO: Edit employee dialog
+                break;
+              case 'delete':
+                _showDeleteConfirmation(context, employee, provider);
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'edit',
+              child: Row(
+                children: [
+                  Icon(Icons.edit, size: 16),
+                  SizedBox(width: 8),
+                  Text('Edit'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  Icon(Icons.delete, size: 16, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('Hapus', style: TextStyle(color: Colors.red)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        isThreeLine: true,
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context,
+      Map<String, dynamic> employee, AdminProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Hapus'),
+        content: Text(
+            'Apakah Anda yakin ingin menghapus karyawan ${employee['name']}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await provider.deleteEmployee(employee['id']);
+              if (success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Karyawan berhasil dihapus')),
+                );
+              } else if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(
+                          provider.errorMessage ?? 'Gagal menghapus karyawan')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getEmployeeInitial(dynamic name) {
+    final nameStr = name?.toString() ?? 'U';
+    if (nameStr.isEmpty) return 'U';
+    return nameStr.substring(0, 1).toUpperCase();
+  }
+
+  String _getEmployeePosition(Map<String, dynamic> employee) {
+    final position = employee['position'];
+    if (position == null) return 'N/A';
+
+    if (position is Map<String, dynamic>) {
+      return position['name']?.toString() ?? 'N/A';
+    } else if (position is String) {
+      return position;
+    }
+
+    return position.toString();
+  }
+}
+
+// Management Tab with sub-tabs
+class AdminManagementTab extends StatefulWidget {
+  const AdminManagementTab({Key? key}) : super(key: key);
+
+  @override
+  State<AdminManagementTab> createState() => _AdminManagementTabState();
+}
+
+class _AdminManagementTabState extends State<AdminManagementTab>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: Theme.of(context).primaryColor,
+          child: TabBar(
+            controller: _tabController,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            labelStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            unselectedLabelStyle: const TextStyle(fontSize: 11),
+            isScrollable: false,
+            tabs: const [
+              Tab(text: 'Karyawan', icon: Icon(Icons.people, size: 18)),
+              Tab(text: 'Kehadiran', icon: Icon(Icons.access_time, size: 18)),
+              Tab(text: 'Cuti', icon: Icon(Icons.event_busy, size: 18)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: const [
+              AdminEmployeesTab(),
+              AdminAttendanceTab(),
+              AdminLeaveTab(),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
 
-class AdminAttendanceTab extends StatelessWidget {
-  const AdminAttendanceTab({Key? key}) : super(key: key);
+// Analytics Tab with sub-tabs
+class AdminAnalyticsTab extends StatefulWidget {
+  const AdminAnalyticsTab({Key? key}) : super(key: key);
+
+  @override
+  State<AdminAnalyticsTab> createState() => _AdminAnalyticsTabState();
+}
+
+class _AdminAnalyticsTabState extends State<AdminAnalyticsTab>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: Theme.of(context).primaryColor,
+          child: TabBar(
+            controller: _tabController,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            labelStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            unselectedLabelStyle: const TextStyle(fontSize: 11),
+            isScrollable: false,
+            tabs: const [
+              Tab(text: 'KPI', icon: Icon(Icons.trending_up, size: 18)),
+              Tab(text: 'Laporan', icon: Icon(Icons.assessment, size: 18)),
+              Tab(text: 'Charts', icon: Icon(Icons.bar_chart, size: 18)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: const [
+              AdminKPITab(),
+              AdminReportsTab(),
+              AdminChartsTab(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Settings Tab with sub-tabs
+class AdminSettingsTab extends StatefulWidget {
+  const AdminSettingsTab({Key? key}) : super(key: key);
+
+  @override
+  State<AdminSettingsTab> createState() => _AdminSettingsTabState();
+}
+
+class _AdminSettingsTabState extends State<AdminSettingsTab>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: Theme.of(context).primaryColor,
+          child: TabBar(
+            controller: _tabController,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            labelStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            unselectedLabelStyle: const TextStyle(fontSize: 11),
+            isScrollable: false,
+            tabs: const [
+              Tab(text: 'Konten', icon: Icon(Icons.article, size: 18)),
+              Tab(text: 'Profil', icon: Icon(Icons.person, size: 18)),
+              Tab(text: 'Sistem', icon: Icon(Icons.tune, size: 18)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: const [
+              AdminContentTab(),
+              AdminProfileTab(),
+              AdminSystemTab(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Add new placeholder tabs
+class AdminLeaveTab extends StatelessWidget {
+  const AdminLeaveTab({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('Attendance Management'),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.event_busy, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('Leave Management',
+              style: TextStyle(fontSize: 18, color: Colors.grey)),
+          SizedBox(height: 8),
+          Text('Coming Soon...', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
     );
+  }
+}
+
+class AdminKPITab extends StatelessWidget {
+  const AdminKPITab({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.trending_up, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('KPI Analytics',
+              style: TextStyle(fontSize: 18, color: Colors.grey)),
+          SizedBox(height: 8),
+          Text('Coming Soon...', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+}
+
+class AdminChartsTab extends StatelessWidget {
+  const AdminChartsTab({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.bar_chart, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('Charts & Graphs',
+              style: TextStyle(fontSize: 18, color: Colors.grey)),
+          SizedBox(height: 8),
+          Text('Coming Soon...', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+}
+
+class AdminProfileTab extends StatelessWidget {
+  const AdminProfileTab({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.person, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('Profile Settings',
+              style: TextStyle(fontSize: 18, color: Colors.grey)),
+          SizedBox(height: 8),
+          Text('Coming Soon...', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+}
+
+class AdminSystemTab extends StatelessWidget {
+  const AdminSystemTab({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.tune, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('System Settings',
+              style: TextStyle(fontSize: 18, color: Colors.grey)),
+          SizedBox(height: 8),
+          Text('Coming Soon...', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+}
+
+class AdminAttendanceTab extends StatefulWidget {
+  const AdminAttendanceTab({Key? key}) : super(key: key);
+
+  @override
+  State<AdminAttendanceTab> createState() => _AdminAttendanceTabState();
+}
+
+class _AdminAttendanceTabState extends State<AdminAttendanceTab> {
+  String? _selectedDate;
+  String? _selectedStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load attendance records when tab opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminProvider>().loadAttendanceRecords(refresh: true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AdminProvider>(
+      builder: (context, adminProvider, child) {
+        return Column(
+          children: [
+            // Filter Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.grey[50],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Filter Kehadiran',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _selectDate(context),
+                          icon: const Icon(Icons.calendar_today, size: 16),
+                          label: Text(_selectedDate ?? 'Pilih Tanggal'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black87,
+                            side: const BorderSide(color: Colors.grey),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedStatus,
+                          hint: const Text('Status'),
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                                value: null, child: Text('Semua Status')),
+                            DropdownMenuItem(
+                                value: 'present', child: Text('Hadir')),
+                            DropdownMenuItem(
+                                value: 'late', child: Text('Terlambat')),
+                            DropdownMenuItem(
+                                value: 'absent', child: Text('Tidak Hadir')),
+                          ],
+                          onChanged: (value) {
+                            setState(() => _selectedStatus = value);
+                            _applyFilters();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Attendance List
+            Expanded(
+              child: adminProvider.isLoadingAttendance &&
+                      adminProvider.attendanceRecords.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : adminProvider.attendanceRecords.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Belum ada data kehadiran',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
+                              ),
+                              const SizedBox(height: 8),
+                              if (adminProvider.errorMessage != null)
+                                Text(
+                                  adminProvider.errorMessage!,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Colors.red[600],
+                                      ),
+                                  textAlign: TextAlign.center,
+                                ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            await adminProvider.loadAttendanceRecords(
+                                refresh: true);
+                          },
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: adminProvider.attendanceRecords.length +
+                                (adminProvider.hasMoreAttendance ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index ==
+                                  adminProvider.attendanceRecords.length) {
+                                // Load more indicator
+                                if (adminProvider.isLoadingAttendance) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                        child: CircularProgressIndicator()),
+                                  );
+                                } else if (adminProvider.hasMoreAttendance) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        adminProvider.loadAttendanceRecords();
+                                      },
+                                      child: const Text('Load More'),
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              }
+
+                              final attendance =
+                                  adminProvider.attendanceRecords[index];
+                              return _buildAttendanceCard(context, attendance);
+                            },
+                          ),
+                        ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAttendanceCard(
+      BuildContext context, Map<String, dynamic> attendance) {
+    final status = attendance['status'] ?? 'unknown';
+    final statusColor = _getStatusColor(status);
+    final statusText = _getStatusText(status);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: statusColor,
+          child: Icon(
+            _getStatusIcon(status),
+            color: Colors.white,
+            size: 20,
+          ),
+        ),
+        title: Text(
+          attendance['employee']?['name'] ?? 'Unknown Employee',
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Tanggal: ${attendance['date'] ?? 'N/A'}'),
+            if (attendance['clock_in'] != null)
+              Text('Masuk: ${attendance['clock_in']}'),
+            if (attendance['clock_out'] != null)
+              Text('Keluar: ${attendance['clock_out']}'),
+          ],
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: statusColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            statusText,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        isThreeLine: true,
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'present':
+        return Colors.green;
+      case 'late':
+        return Colors.orange;
+      case 'absent':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'present':
+        return 'Hadir';
+      case 'late':
+        return 'Terlambat';
+      case 'absent':
+        return 'Tidak Hadir';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'present':
+        return Icons.check_circle;
+      case 'late':
+        return Icons.schedule;
+      case 'absent':
+        return Icons.cancel;
+      default:
+        return Icons.help;
+    }
+  }
+
+  void _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+      _applyFilters();
+    }
+  }
+
+  void _applyFilters() {
+    context.read<AdminProvider>().loadAttendanceRecords(
+          refresh: true,
+          date: _selectedDate,
+          status: _selectedStatus,
+        );
   }
 }
 
@@ -408,9 +1223,13 @@ class _AdminContentTabState extends State<AdminContentTab>
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
+            labelStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            unselectedLabelStyle: const TextStyle(fontSize: 11),
+            isScrollable: false,
             tabs: const [
-              Tab(text: 'Kelola Pengumuman', icon: Icon(Icons.campaign)),
-              Tab(text: 'Kelola Media', icon: Icon(Icons.photo_library)),
+              Tab(text: 'Pengumuman', icon: Icon(Icons.campaign, size: 20)),
+              Tab(text: 'Media', icon: Icon(Icons.photo_library, size: 20)),
             ],
           ),
         ),
@@ -1328,8 +2147,236 @@ class AdminReportsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Reports & Analytics'),
+    return Consumer<AdminProvider>(
+      builder: (context, adminProvider, child) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Laporan & Analitik',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 16),
+
+              // Quick Stats from Dashboard
+              if (adminProvider.dashboardStats != null) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Ringkasan Hari Ini',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildQuickStat(
+                                context,
+                                'Total Karyawan',
+                                '${adminProvider.dashboardStats?['stats']?['total_employees'] ?? 0}',
+                                Icons.people,
+                                Colors.blue,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildQuickStat(
+                                context,
+                                'Kehadiran Hari Ini',
+                                '${adminProvider.dashboardStats?['stats']?['today_attendance'] ?? 0}',
+                                Icons.access_time,
+                                Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Report Menu Grid
+              Text(
+                'Jenis Laporan',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 12),
+
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  children: [
+                    _buildReportCard(
+                      context,
+                      'Laporan Kehadiran Harian',
+                      'Detail kehadiran karyawan per hari',
+                      Icons.calendar_view_day,
+                      Colors.green,
+                      onTap: () =>
+                          _showComingSoon(context, 'Laporan Kehadiran Harian'),
+                    ),
+                    _buildReportCard(
+                      context,
+                      'Laporan Kehadiran Bulanan',
+                      'Ringkasan kehadiran per bulan',
+                      Icons.calendar_month,
+                      Colors.blue,
+                      onTap: () =>
+                          _showComingSoon(context, 'Laporan Kehadiran Bulanan'),
+                    ),
+                    _buildReportCard(
+                      context,
+                      'Laporan Cuti',
+                      'Status dan history cuti karyawan',
+                      Icons.event_busy,
+                      Colors.orange,
+                      onTap: () => _showComingSoon(context, 'Laporan Cuti'),
+                    ),
+                    _buildReportCard(
+                      context,
+                      'Laporan KPI',
+                      'Performance indicator karyawan',
+                      Icons.trending_up,
+                      Colors.purple,
+                      onTap: () => _showComingSoon(context, 'Laporan KPI'),
+                    ),
+                    _buildReportCard(
+                      context,
+                      'Analitik Produktivitas',
+                      'Analisa produktivitas tim',
+                      Icons.analytics,
+                      Colors.teal,
+                      onTap: () =>
+                          _showComingSoon(context, 'Analitik Produktivitas'),
+                    ),
+                    _buildReportCard(
+                      context,
+                      'Export Data',
+                      'Export data ke Excel/PDF',
+                      Icons.file_download,
+                      Colors.red,
+                      onTap: () => _showComingSoon(context, 'Export Data'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickStat(
+    BuildContext context,
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportCard(
+    BuildContext context,
+    String title,
+    String description,
+    IconData icon,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return Card(
+      elevation: 2,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 40),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                description,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showComingSoon(BuildContext context, String feature) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Coming Soon'),
+        content: Text('Fitur $feature akan tersedia pada update berikutnya.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 }
