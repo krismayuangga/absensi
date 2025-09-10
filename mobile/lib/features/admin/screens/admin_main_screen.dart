@@ -4,6 +4,8 @@ import '../../../core/providers/admin_content_provider.dart';
 import '../widgets/employee_form_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({Key? key}) : super(key: key);
@@ -1307,37 +1309,43 @@ class _AdminKPITabState extends State<AdminKPITab> {
           ),
         ),
         SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          childAspectRatio: 1.5,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
+        // Layout 4 kolom sejajar dalam 1 baris
+        Row(
           children: [
-            _buildStatCard(
-              'Hari Ini',
-              '${stats['visits_today'] ?? 0}',
-              Icons.today,
-              Colors.blue,
+            Expanded(
+              child: _buildStatCard(
+                'Hari Ini',
+                '${stats['visits_today'] ?? 0}',
+                Icons.today,
+                Colors.blue,
+              ),
             ),
-            _buildStatCard(
-              'Minggu Ini',
-              '${stats['visits_this_week'] ?? 0}',
-              Icons.date_range,
-              Colors.green,
+            SizedBox(width: 8),
+            Expanded(
+              child: _buildStatCard(
+                'Minggu Ini',
+                '${stats['visits_this_week'] ?? 0}',
+                Icons.date_range,
+                Colors.green,
+              ),
             ),
-            _buildStatCard(
-              'Bulan Ini',
-              '${stats['visits_this_month'] ?? 0}',
-              Icons.calendar_month,
-              Colors.orange,
+            SizedBox(width: 8),
+            Expanded(
+              child: _buildStatCard(
+                'Bulan Ini',
+                '${stats['visits_this_month'] ?? 0}',
+                Icons.calendar_month,
+                Colors.orange,
+              ),
             ),
-            _buildStatCard(
-              'Tingkat Sukses',
-              '${stats['success_rate'] ?? 0}%',
-              Icons.trending_up,
-              Colors.purple,
+            SizedBox(width: 8),
+            Expanded(
+              child: _buildStatCard(
+                'Tingkat Sukses',
+                '${stats['success_rate'] ?? 0}%',
+                Icons.trending_up,
+                Colors.purple,
+              ),
             ),
           ],
         ),
@@ -1352,7 +1360,7 @@ class _AdminKPITabState extends State<AdminKPITab> {
     return Card(
       elevation: 2,
       child: Container(
-        padding: EdgeInsets.all(12),
+        padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           gradient: LinearGradient(
@@ -1364,24 +1372,27 @@ class _AdminKPITabState extends State<AdminKPITab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 28, color: color),
-            SizedBox(height: 6),
+            Icon(icon, size: 20, color: color),
+            SizedBox(height: 4),
             Text(
               value,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
-            SizedBox(height: 3),
+            SizedBox(height: 2),
             Text(
               title,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -1838,7 +1849,7 @@ class _AdminKPITabState extends State<AdminKPITab> {
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                prospect['name'] ?? 'Detail Prospek',
+                prospect['client_name'] ?? 'Detail Prospek',
                 style: TextStyle(fontSize: 18),
               ),
             ),
@@ -1855,29 +1866,32 @@ class _AdminKPITabState extends State<AdminKPITab> {
                   'Alamat', prospect['address'] ?? 'Tidak tersedia'),
               _buildDetailRow('PIC Karyawan',
                   prospect['employee_name'] ?? 'Belum ditentukan'),
+              _buildDetailRow('ID Karyawan', prospect['employee_id'] ?? 'N/A'),
               _buildDetailRow('Tujuan Kunjungan',
                   prospect['visit_purpose'] ?? 'Tidak tersedia'),
               _buildDetailRow('Nilai Potensial',
                   prospect['formatted_potential_value'] ?? 'Rp 0'),
               _buildDetailRow('Status', prospect['status'] ?? 'pending'),
+              _buildDetailRow(
+                  'Waktu Kunjungan', _formatDate(prospect['start_time'])),
+              if (prospect['notes'] != null &&
+                  prospect['notes'].toString().isNotEmpty)
+                _buildDetailRow('Catatan', prospect['notes']),
+
               SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
-                ),
-                child: Column(
+
+              // Foto Section
+              if (prospect['photo_url'] != null &&
+                  prospect['photo_url'].toString().isNotEmpty)
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.info, size: 16, color: Colors.blue),
+                        Icon(Icons.camera_alt, size: 16, color: Colors.blue),
                         SizedBox(width: 4),
                         Text(
-                          'Informasi Tambahan',
+                          'Foto Kunjungan',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Colors.blue[800],
@@ -1886,13 +1900,154 @@ class _AdminKPITabState extends State<AdminKPITab> {
                       ],
                     ),
                     SizedBox(height: 8),
-                    Text(
-                      'Fitur detail lokasi, foto kunjungan, dan riwayat lengkap akan segera ditambahkan.',
-                      style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                    Container(
+                      width: double.infinity,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: CachedNetworkImage(
+                          imageUrl: prospect['photo_url'],
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) {
+                            return Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image,
+                                        size: 40, color: Colors.grey[400]),
+                                    SizedBox(height: 8),
+                                    Text('Foto tidak dapat dimuat',
+                                        style:
+                                            TextStyle(color: Colors.grey[600])),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
+                    SizedBox(height: 16),
                   ],
                 ),
-              ),
+
+              // Location Section
+              if (prospect['latitude'] != null && prospect['longitude'] != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, size: 16, color: Colors.green),
+                        SizedBox(width: 4),
+                        Text(
+                          'Lokasi Kunjungan',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green[200]!),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Koordinat GPS:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.green[800],
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Lat: ${prospect['latitude']}\nLng: ${prospect['longitude']}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green[700],
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              _openGoogleMaps(
+                                  prospect['latitude'], prospect['longitude']);
+                            },
+                            icon: Icon(Icons.map, size: 16),
+                            label: Text('Buka di Maps'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                  ],
+                ),
+
+              // Info message when no photo/location available
+              if ((prospect['photo_url'] == null ||
+                      prospect['photo_url'].toString().isEmpty) &&
+                  (prospect['latitude'] == null ||
+                      prospect['longitude'] == null))
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.info, size: 16, color: Colors.grey[600]),
+                          SizedBox(width: 4),
+                          Text(
+                            'Informasi Tambahan',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Foto dan lokasi kunjungan belum tersedia untuk data ini.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -2105,6 +2260,34 @@ class _AdminKPITabState extends State<AdminKPITab> {
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
       return dateStr;
+    }
+  }
+
+  // Open Google Maps with coordinates
+  void _openGoogleMaps(dynamic latitude, dynamic longitude) async {
+    if (latitude == null || longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Koordinat lokasi tidak tersedia')),
+      );
+      return;
+    }
+
+    final lat = latitude.toString();
+    final lng = longitude.toString();
+    final googleMapsUrl =
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+
+    try {
+      final uri = Uri.parse(googleMapsUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch $googleMapsUrl';
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tidak dapat membuka Google Maps: $e')),
+      );
     }
   }
 }
@@ -3833,10 +4016,16 @@ class AdminReportsTab extends StatelessWidget {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              prospect['photo_url'].toString(),
+                            child: CachedNetworkImage(
+                              imageUrl: prospect['photo_url'].toString(),
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
+                              placeholder: (context, url) => Container(
+                                color: Colors.grey[100],
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) {
                                 return Container(
                                   color: Colors.grey[100],
                                   child: Column(
@@ -3849,25 +4038,6 @@ class AdminReportsTab extends StatelessWidget {
                                           style: TextStyle(
                                               color: Colors.grey[600])),
                                     ],
-                                  ),
-                                );
-                              },
-                              loadingBuilder:
-                                  (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  color: Colors.grey[100],
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      value:
-                                          loadingProgress.expectedTotalBytes !=
-                                                  null
-                                              ? loadingProgress
-                                                      .cumulativeBytesLoaded /
-                                                  loadingProgress
-                                                      .expectedTotalBytes!
-                                              : null,
-                                    ),
                                   ),
                                 );
                               },
@@ -4045,10 +4215,16 @@ class AdminReportsTab extends StatelessWidget {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              visit['photo_url'].toString(),
+                            child: CachedNetworkImage(
+                              imageUrl: visit['photo_url'].toString(),
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
+                              placeholder: (context, url) => Container(
+                                color: Colors.grey[100],
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) {
                                 return Container(
                                   color: Colors.grey[100],
                                   child: Column(

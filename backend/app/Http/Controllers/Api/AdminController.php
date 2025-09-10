@@ -692,53 +692,61 @@ class AdminController extends Controller
     public function getKpiAnalytics()
     {
         try {
-            // Use KpiVisit model directly
-            $kpiVisitModel = \App\Models\KpiVisit::class;
+            // Debug: Check if table has any data
+            $totalKpiVisits = \App\Models\KpiVisit::count();
             
             // Overall KPI statistics
-            $totalVisitsToday = $kpiVisitModel::whereDate('start_time', today())->count();
-            $totalVisitsWeek = $kpiVisitModel::whereBetween('start_time', [now()->startOfWeek(), now()->endOfWeek()])->count();
-            $totalVisitsMonth = $kpiVisitModel::whereMonth('start_time', now()->month)
+            $totalVisitsToday = \App\Models\KpiVisit::whereDate('start_time', today())->count();
+            $totalVisitsWeek = \App\Models\KpiVisit::whereBetween('start_time', [now()->startOfWeek(), now()->endOfWeek()])->count();
+            $totalVisitsMonth = \App\Models\KpiVisit::whereMonth('start_time', now()->month)
                 ->whereYear('start_time', now()->year)
                 ->count();
             
+            // Alternative query for monthly data with broader date range
+            $startOfMonth = now()->startOfMonth();
+            $endOfMonth = now()->endOfMonth();
+            $totalVisitsMonthAlt = \App\Models\KpiVisit::whereBetween('start_time', [$startOfMonth, $endOfMonth])->count();
+            
+            // Get some sample data for debugging
+            $sampleVisits = \App\Models\KpiVisit::latest()->limit(3)->get(['id', 'start_time', 'status', 'client_name']);
+            
             // Success metrics
-            $successfulVisitsMonth = $kpiVisitModel::whereMonth('start_time', now()->month)
+            $successfulVisitsMonth = \App\Models\KpiVisit::whereMonth('start_time', now()->month)
                 ->whereYear('start_time', now()->year)
                 ->where('status', 'success')
                 ->count();
                 
             $successRate = $totalVisitsMonth > 0 ? round(($successfulVisitsMonth / $totalVisitsMonth) * 100, 1) : 0;
             
-            $totalPotentialValue = $kpiVisitModel::whereMonth('start_time', now()->month)
+            $totalPotentialValue = \App\Models\KpiVisit::whereMonth('start_time', now()->month)
                 ->whereYear('start_time', now()->year)
                 ->where('status', 'success')
                 ->sum('potential_value') ?? 0;
 
             // Visit breakdown by purpose (current month)
             $visitsByPurpose = [
-                'prospecting' => $kpiVisitModel::whereMonth('start_time', now()->month)
+                'prospecting' => \App\Models\KpiVisit::whereMonth('start_time', now()->month)
                     ->whereYear('start_time', now()->year)
                     ->where('visit_purpose', 'prospecting')
                     ->count(),
-                'follow_up' => $kpiVisitModel::whereMonth('start_time', now()->month)
+                'follow_up' => \App\Models\KpiVisit::whereMonth('start_time', now()->month)
                     ->whereYear('start_time', now()->year)
                     ->where('visit_purpose', 'follow_up')
                     ->count(),
-                'closing' => $kpiVisitModel::whereMonth('start_time', now()->month)
+                'closing' => \App\Models\KpiVisit::whereMonth('start_time', now()->month)
                     ->whereYear('start_time', now()->year)
                     ->where('visit_purpose', 'closing')
                     ->count(),
             ];
 
             // Active prospects (ALL prospects, not just pending)
-            $activeProspects = $kpiVisitModel::with('user:id,name,employee_id')
+            $activeProspects = \App\Models\KpiVisit::with('user:id,name,employee_id')
                 ->whereMonth('start_time', now()->month)
                 ->whereYear('start_time', now()->year)
                 ->latest('start_time')
                 ->limit(20)
                 ->get()
-                ->map(function ($visit) use ($kpiVisitModel) {
+                ->map(function ($visit) {
                     return [
                         'id' => $visit->id,
                         'client_name' => $visit->client_name,
@@ -751,7 +759,7 @@ class AdminController extends Controller
                         'start_time' => $visit->start_time->format('Y-m-d H:i:s'),
                         'address' => $visit->address,
                         'notes' => $visit->notes,
-                        'visits_count' => $kpiVisitModel::where('client_name', $visit->client_name)->count(),
+                        'visits_count' => \App\Models\KpiVisit::where('client_name', $visit->client_name)->count(),
                         // Add location data for detail view
                         'latitude' => $visit->latitude,
                         'longitude' => $visit->longitude,
@@ -760,7 +768,7 @@ class AdminController extends Controller
                 });
 
             // Pending visits (only actual pending status)
-            $pendingVisits = $kpiVisitModel::with('user:id,name,employee_id')
+            $pendingVisits = \App\Models\KpiVisit::with('user:id,name,employee_id')
                 ->where('status', 'pending')
                 ->latest('created_at')
                 ->limit(5)
@@ -783,7 +791,7 @@ class AdminController extends Controller
                 });
 
             // Top performing employees (current month)
-            $topEmployees = $kpiVisitModel::with('user:id,name,employee_id')
+            $topEmployees = \App\Models\KpiVisit::with('user:id,name,employee_id')
                 ->whereMonth('start_time', now()->month)
                 ->whereYear('start_time', now()->year)
                 ->select('user_id')
@@ -815,11 +823,19 @@ class AdminController extends Controller
                         'total_visits_today' => $totalVisitsToday,
                         'total_visits_week' => $totalVisitsWeek,
                         'total_visits_month' => $totalVisitsMonth,
+                        'total_visits_month_alt' => $totalVisitsMonthAlt,
                         'successful_visits_month' => $successfulVisitsMonth,
                         'success_rate' => $successRate,
                         'total_potential_value' => $totalPotentialValue,
                         'formatted_potential_value' => 'Rp ' . number_format($totalPotentialValue, 0, ',', '.'),
                         'visits_by_purpose' => $visitsByPurpose,
+                    ],
+                    'debug_info' => [
+                        'total_kpi_visits_in_table' => $totalKpiVisits,
+                        'current_date' => now()->format('Y-m-d H:i:s'),
+                        'start_of_month' => $startOfMonth->format('Y-m-d H:i:s'),
+                        'end_of_month' => $endOfMonth->format('Y-m-d H:i:s'),
+                        'sample_visits' => $sampleVisits,
                     ],
                     'active_prospects' => $activeProspects,
                     'pending_visits' => $pendingVisits,
