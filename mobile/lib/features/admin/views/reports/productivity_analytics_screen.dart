@@ -775,7 +775,7 @@ class _ProductivityAnalyticsScreenState
                 ),
                 _buildKpiMetric(
                   'Avg. Visit Value',
-                  'Rp ${_formatNumber((kpiData?['statistics']?['total_potential_value'] ?? 0) / (kpiData?['statistics']?['total_visits_month'] ?? 1))}',
+                  _buildAverageVisitValue(kpiData),
                   Colors.blue,
                 ),
               ],
@@ -784,6 +784,40 @@ class _ProductivityAnalyticsScreenState
         ),
       ),
     );
+  }
+
+  String _buildAverageVisitValue(Map<String, dynamic>? kpiData) {
+    try {
+      final totalValue = kpiData?['statistics']?['total_potential_value'];
+      final totalVisits = kpiData?['statistics']?['total_visits_month'];
+
+      // Convert to double and handle null cases
+      double value = 0.0;
+      double visits = 1.0;
+
+      if (totalValue != null) {
+        if (totalValue is String) {
+          value = double.tryParse(totalValue) ?? 0.0;
+        } else if (totalValue is num) {
+          value = totalValue.toDouble();
+        }
+      }
+
+      if (totalVisits != null) {
+        if (totalVisits is String) {
+          visits = double.tryParse(totalVisits) ?? 1.0;
+        } else if (totalVisits is num) {
+          visits = totalVisits.toDouble();
+        }
+      }
+
+      if (visits == 0) visits = 1.0; // Prevent division by zero
+
+      final average = value / visits;
+      return 'Rp ${_formatNumber(average)}';
+    } catch (e) {
+      return 'Rp 0';
+    }
   }
 
   Widget _buildKpiMetric(String label, String value, Color color) {
@@ -924,12 +958,29 @@ class _ProductivityAnalyticsScreenState
     return Colors.red;
   }
 
-  String _formatNumber(num number) {
-    if (number >= 1000000) {
-      return '${(number / 1000000).toStringAsFixed(1)}M';
-    } else if (number >= 1000) {
-      return '${(number / 1000).toStringAsFixed(1)}K';
+  String _formatNumber(dynamic value) {
+    try {
+      // Konversi ke double terlebih dahulu
+      double number = 0.0;
+
+      if (value == null) return '0';
+
+      if (value is String) {
+        number = double.tryParse(value) ?? 0.0;
+      } else if (value is num) {
+        number = value.toDouble();
+      } else {
+        return '0';
+      }
+
+      if (number >= 1000000) {
+        return '${(number / 1000000).toStringAsFixed(1)}M';
+      } else if (number >= 1000) {
+        return '${(number / 1000).toStringAsFixed(1)}K';
+      }
+      return number.toStringAsFixed(0);
+    } catch (e) {
+      return '0';
     }
-    return number.toStringAsFixed(0);
   }
 }
