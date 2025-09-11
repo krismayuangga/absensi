@@ -190,40 +190,54 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              Row(
+                              Column(
                                 children: [
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: () =>
-                                          _setQuickDateRange('this_month'),
-                                      child: const Text('Bulan Ini'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue[100],
-                                        foregroundColor: Colors.blue[800],
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () =>
+                                              _setQuickDateRange('this_month'),
+                                          child: const Text('Bulan Ini',
+                                              style: TextStyle(fontSize: 12)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blue[100],
+                                            foregroundColor: Colors.blue[800],
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 8),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: () =>
-                                          _setQuickDateRange('last_month'),
-                                      child: const Text('Bulan Lalu'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green[100],
-                                        foregroundColor: Colors.green[800],
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () =>
+                                              _setQuickDateRange('last_month'),
+                                          child: const Text('Bulan Lalu',
+                                              style: TextStyle(fontSize: 12)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green[100],
+                                            foregroundColor: Colors.green[800],
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 8),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
                                     child: ElevatedButton(
                                       onPressed: () =>
                                           _setQuickDateRange('this_year'),
-                                      child: const Text('Tahun Ini'),
+                                      child: const Text('Tahun Ini',
+                                          style: TextStyle(fontSize: 12)),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.orange[100],
                                         foregroundColor: Colors.orange[800],
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8),
                                       ),
                                     ),
                                   ),
