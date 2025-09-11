@@ -4,6 +4,7 @@ import '../../../core/providers/admin_content_provider.dart';
 import '../widgets/employee_form_dialog.dart';
 import '../views/reports/yearly_leave_report_screen.dart';
 import '../views/reports/kpi_report_screen.dart';
+import '../views/reports/productivity_analytics_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -3713,8 +3714,7 @@ class _AdminReportsTabState extends State<AdminReportsTab> {
                       'Analisa produktivitas tim',
                       Icons.analytics,
                       Colors.teal,
-                      onTap: () =>
-                          _showComingSoon(context, 'Analitik Produktivitas'),
+                      onTap: () => _showProductivityAnalytics(context),
                     ),
                     _buildReportCard(
                       context,
@@ -3828,6 +3828,15 @@ class _AdminReportsTabState extends State<AdminReportsTab> {
       context,
       MaterialPageRoute(
         builder: (context) => const KpiReportScreen(),
+      ),
+    );
+  }
+
+  void _showProductivityAnalytics(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProductivityAnalyticsScreen(),
       ),
     );
   }
