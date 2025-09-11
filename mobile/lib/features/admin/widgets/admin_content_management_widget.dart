@@ -50,13 +50,13 @@ class _AdminContentManagementWidgetState
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
+            labelStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            unselectedLabelStyle: const TextStyle(fontSize: 11),
+            isScrollable: false,
             tabs: const [
-              Tab(
-                  text: 'Kelola Pengumuman',
-                  icon: Icon(Icons.campaign, size: 20)),
-              Tab(
-                  text: 'Kelola Media',
-                  icon: Icon(Icons.photo_library, size: 20)),
+              Tab(text: 'Pengumuman', icon: Icon(Icons.campaign, size: 18)),
+              Tab(text: 'Media', icon: Icon(Icons.photo_library, size: 18)),
             ],
           ),
         ),
@@ -98,23 +98,27 @@ class _AnnouncementManagementTabState extends State<AnnouncementManagementTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Pengumuman Terbaru',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        'Pengumuman Terbaru',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: () => _showCreateAnnouncementModal(context),
                       icon:
-                          const Icon(Icons.add, color: Colors.white, size: 18),
+                          const Icon(Icons.add, color: Colors.white, size: 16),
                       label: const Text('Buat',
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(color: Colors.white, fontSize: 12)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                            horizontal: 12, vertical: 8),
+                        minimumSize: const Size(0, 36),
                       ),
                     ),
                   ],
@@ -241,17 +245,20 @@ class _AnnouncementManagementTabState extends State<AnnouncementManagementTab> {
                       children: [
                         const Icon(Icons.campaign, color: Colors.blue),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Buat Pengumuman Baru',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'Buat Pengumuman Baru',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        const Spacer(),
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.close),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
                       ],
                     ),
@@ -496,23 +503,27 @@ class _MediaManagementTabState extends State<MediaManagementTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Galeri Media',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        'Galeri Media',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: () => _showUploadMediaModal(context),
                       icon: const Icon(Icons.add_a_photo,
-                          color: Colors.white, size: 18),
+                          color: Colors.white, size: 16),
                       label: const Text('Upload',
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(color: Colors.white, fontSize: 12)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                            horizontal: 12, vertical: 8),
+                        minimumSize: const Size(0, 36),
                       ),
                     ),
                   ],
@@ -698,17 +709,20 @@ class _MediaManagementTabState extends State<MediaManagementTab> {
                       children: [
                         const Icon(Icons.photo_library, color: Colors.blue),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Upload Media Baru',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'Upload Media Baru',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        const Spacer(),
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.close),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
                       ],
                     ),
