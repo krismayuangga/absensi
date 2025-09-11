@@ -919,4 +919,143 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get detailed leave report for analytics
+     */
+    public function getDetailedLeaveReport(Request $request)
+    {
+        try {
+            $startDate = $request->get('start_date', Carbon::now()->startOfYear()->format('Y-m-d'));
+            $endDate = $request->get('end_date', Carbon::now()->endOfYear()->format('Y-m-d'));
+            
+            // Summary statistics
+            $totalEmployees = User::where('role', 'employee')
+                ->where('is_active', true)
+                ->count();
+                
+            $totalLeaves = Leave::whereBetween('start_date', [$startDate, $endDate])
+                ->count();
+                
+            $avgLeavesPerEmployee = $totalEmployees > 0 ? 
+                round($totalLeaves / $totalEmployees, 2) : 0;
+            
+            // Leave breakdown by type
+            $leavesByType = Leave::whereBetween('start_date', [$startDate, $endDate])
+                ->select('type as leave_type', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_days) as total_days'))
+                ->groupBy('type')
+                ->get()
+                ->toArray();
+            
+            // Leave breakdown by status
+            $leavesByStatus = Leave::whereBetween('start_date', [$startDate, $endDate])
+                ->select('status', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_days) as total_days'))
+                ->groupBy('status')
+                ->get()
+                ->toArray();
+            
+            // Monthly trend
+            $monthlyTrend = Leave::whereBetween('start_date', [$startDate, $endDate])
+                ->select(
+                    DB::raw('YEAR(start_date) as year'),
+                    DB::raw('MONTH(start_date) as month'),
+                    DB::raw('COUNT(*) as total_leaves'),
+                    DB::raw('SUM(total_days) as total_days')
+                )
+                ->groupBy('year', 'month')
+                ->orderBy('year')
+                ->orderBy('month')
+                ->get()
+                ->map(function($item) {
+                    return [
+                        'bulan' => $item->year . '-' . str_pad($item->month, 2, '0', STR_PAD_LEFT),
+                        'nama_bulan' => Carbon::createFromDate($item->year, $item->month, 1)->locale('id')->isoFormat('MMMM YYYY'),
+                        'total_cuti' => $item->total_leaves,
+                        'total_hari' => $item->total_days
+                    ];
+                })
+                ->toArray();
+            
+            // Employee-wise leave analysis - Include all users who have leaves data
+            $employees = User::where('is_active', true)
+                ->whereHas('leaves', function($query) use ($startDate, $endDate) {
+                    $query->whereBetween('start_date', [$startDate, $endDate]);
+                })
+                ->with(['leaves' => function($query) use ($startDate, $endDate) {
+                    $query->whereBetween('start_date', [$startDate, $endDate]);
+                }])
+                ->get()
+                ->map(function($employee) {
+                    $leaves = $employee->leaves;
+                    $totalLeaves = $leaves->count();
+                    $totalDays = $leaves->sum('total_days');
+                    
+                    // Calculate usage percentage (assuming 12 days annual leave)
+                    $usagePercentage = round(($totalDays / 12) * 100, 1);
+                    
+                    // Breakdown by leave type
+                    $leavesByType = $leaves->groupBy('type')->map(function($typeLeaves, $type) {
+                        return [
+                            'leave_type' => $type,
+                            'count' => $typeLeaves->count(),
+                            'total_days' => $typeLeaves->sum('total_days')
+                        ];
+                    })->values()->toArray();
+                    
+                    // Breakdown by status
+                    $leavesByStatus = $leaves->groupBy('status')->map(function($statusLeaves, $status) {
+                        return [
+                            'status' => $status,
+                            'count' => $statusLeaves->count(),
+                            'total_days' => $statusLeaves->sum('total_days')
+                        ];
+                    })->values()->toArray();
+                    
+                    return [
+                        'name' => $employee->name,
+                        'email' => $employee->email ?: 'No email',
+                        'employee_id' => $employee->employee_id,
+                        'position' => $employee->position ?: 'N/A',
+                        'department' => $employee->department ?: 'N/A',
+                        'total_leaves' => $totalLeaves,
+                        'total_days' => $totalDays,
+                        'usage_percentage' => $usagePercentage,
+                        'leaves_by_type' => $leavesByType,
+                        'leaves_by_status' => $leavesByStatus
+                    ];
+                })
+                ->sortByDesc('total_days')
+                ->values()
+                ->toArray();
+            
+            $summary = [
+                'total_employees' => $totalEmployees,
+                'total_leaves' => $totalLeaves,
+                'total_days' => Leave::whereBetween('start_date', [$startDate, $endDate])->sum('total_days'),
+                'avg_leaves_per_employee' => $avgLeavesPerEmployee,
+                'leaves_by_type' => $leavesByType,
+                'leaves_by_status' => $leavesByStatus,
+                'monthly_trend' => $monthlyTrend,
+                'date_range' => [
+                    'start' => $startDate,
+                    'end' => $endDate
+                ]
+            ];
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'summary' => $summary,
+                    'employees' => $employees
+                ],
+                'message' => 'Leave report generated successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating leave report: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

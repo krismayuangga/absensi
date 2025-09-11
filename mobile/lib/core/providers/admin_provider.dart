@@ -576,6 +576,35 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
+  // Leave Report methods
+  Future<Map<String, dynamic>> getDetailedLeaveReport({
+    int? year,
+    String? type,
+    String? status,
+  }) async {
+    try {
+      print('🔄 ADMIN: Getting detailed leave report...');
+
+      final params = <String, dynamic>{};
+      if (year != null) params['year'] = year;
+      if (type != null) params['type'] = type;
+      if (status != null) params['status'] = status;
+
+      print('📊 ADMIN: Leave report params: $params');
+
+      final result = await _adminService.getDetailedLeaveReport(params);
+      print('📊 ADMIN: Leave report result: $result');
+
+      return result;
+    } catch (e) {
+      print('❌ Error getting leave report: $e');
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

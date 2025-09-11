@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/providers/admin_provider.dart';
 import '../../../core/providers/admin_content_provider.dart';
 import '../widgets/employee_form_dialog.dart';
+import '../views/reports/yearly_leave_report_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -3631,9 +3632,14 @@ class _UploadMediaDialogState extends State<UploadMediaDialog> {
   }
 }
 
-class AdminReportsTab extends StatelessWidget {
+class AdminReportsTab extends StatefulWidget {
   const AdminReportsTab({Key? key}) : super(key: key);
 
+  @override
+  State<AdminReportsTab> createState() => _AdminReportsTabState();
+}
+
+class _AdminReportsTabState extends State<AdminReportsTab> {
   @override
   Widget build(BuildContext context) {
     return Consumer<AdminProvider>(
@@ -3736,7 +3742,7 @@ class AdminReportsTab extends StatelessWidget {
                       'Status dan history cuti karyawan',
                       Icons.event_busy,
                       Colors.orange,
-                      onTap: () => _showComingSoon(context, 'Laporan Cuti'),
+                      onTap: () => _showYearlyLeaveReport(context),
                     ),
                     _buildReportCard(
                       context,
@@ -3853,6 +3859,15 @@ class AdminReportsTab extends StatelessWidget {
     );
   }
 
+  void _showYearlyLeaveReport(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const YearlyLeaveReportScreen(),
+      ),
+    );
+  }
+
   void _showComingSoon(BuildContext context, String feature) {
     showDialog(
       context: context,
@@ -3890,497 +3905,490 @@ class AdminReportsTab extends StatelessWidget {
       ),
     );
   }
+}
 
-  // Helper functions for date and time formatting
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'N/A';
-    try {
-      final date = DateTime.parse(dateStr);
-      return DateFormat('dd MMM yyyy', 'id_ID').format(date);
-    } catch (e) {
-      return dateStr;
-    }
+// Helper functions for date and time formatting
+String _formatDate(String? dateStr) {
+  if (dateStr == null) return 'N/A';
+  try {
+    final date = DateTime.parse(dateStr);
+    return DateFormat('dd MMM yyyy', 'id_ID').format(date);
+  } catch (e) {
+    return dateStr;
   }
+}
 
-  String _formatTime(String? timeStr) {
-    if (timeStr == null) return 'N/A';
-    try {
-      // Handle both full datetime and time only
-      if (timeStr.contains('T')) {
-        final dateTime = DateTime.parse(timeStr);
-        return DateFormat('HH:mm').format(dateTime);
-      } else {
-        // Assume it's already time format HH:mm:ss
-        final parts = timeStr.split(':');
-        if (parts.length >= 2) {
-          return '${parts[0]}:${parts[1]}';
-        }
+String _formatTime(String? timeStr) {
+  if (timeStr == null) return 'N/A';
+  try {
+    // Handle both full datetime and time only
+    if (timeStr.contains('T')) {
+      final dateTime = DateTime.parse(timeStr);
+      return DateFormat('HH:mm').format(dateTime);
+    } else {
+      // Assume it's already time format HH:mm:ss
+      final parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        return '${parts[0]}:${parts[1]}';
       }
-      return timeStr;
-    } catch (e) {
-      return timeStr;
     }
+    return timeStr;
+  } catch (e) {
+    return timeStr;
   }
+}
 
-  Color _getStatusColor(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'success':
-        return Colors.green;
-      case 'pending':
-        return Colors.orange;
-      case 'failed':
-        return Colors.red;
-      case 'progress':
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
+Color _getStatusColor(String? status) {
+  switch (status?.toLowerCase()) {
+    case 'success':
+      return Colors.green;
+    case 'pending':
+      return Colors.orange;
+    case 'failed':
+      return Colors.red;
+    case 'progress':
+      return Colors.blue;
+    default:
+      return Colors.grey;
   }
+}
 
-  void _showProspectDetail(
-      BuildContext context, Map<String, dynamic> prospect) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          width: double.infinity,
-          constraints: BoxConstraints(maxHeight: 600),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
+void _showProspectDetail(BuildContext context, Map<String, dynamic> prospect) {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(maxHeight: 600),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.business, color: Colors.blue, size: 24),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        prospect['client_name'] ?? 'Detail Prospek',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.business, color: Colors.blue, size: 24),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      prospect['client_name'] ?? 'Detail Prospek',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.close),
-                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Basic Info
+                    _buildRowInline(
+                        'Nama Klien', prospect['client_name'] ?? 'N/A'),
+                    _buildRowInline('PIC', prospect['employee_name'] ?? 'N/A'),
+                    _buildRowInline('Alamat', prospect['address'] ?? 'N/A'),
+                    _buildRowInline(
+                        'Tujuan Kunjungan', prospect['visit_purpose'] ?? 'N/A'),
+                    _buildRowInline('Status', prospect['status'] ?? 'N/A'),
+                    _buildRowInline('Nilai Potensial',
+                        'Rp ${_formatCurrency(prospect['potential_value'] ?? 0)}'),
+                    _buildRowInline('Waktu Kunjungan',
+                        _formatDateInline(prospect['start_time'])),
+
+                    if (prospect['notes'] != null &&
+                        prospect['notes'].toString().isNotEmpty) ...[
+                      SizedBox(height: 16),
+                      Text(
+                        'Catatan:',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Text(prospect['notes'].toString()),
+                      ),
+                    ],
+
+                    // Photo Section
+                    if (prospect['photo_url'] != null &&
+                        prospect['photo_url'].toString().isNotEmpty) ...[
+                      SizedBox(height: 20),
+                      Text(
+                        'Foto Kunjungan:',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: prospect['photo_url'].toString(),
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[100],
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) {
+                              return Container(
+                                color: Colors.grey[100],
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image,
+                                        size: 48, color: Colors.grey[400]),
+                                    SizedBox(height: 8),
+                                    Text('Foto tidak dapat dimuat',
+                                        style:
+                                            TextStyle(color: Colors.grey[600])),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    // Location Section
+                    if (prospect['latitude'] != null &&
+                        prospect['longitude'] != null) ...[
+                      SizedBox(height: 20),
+                      Text(
+                        'Lokasi Kunjungan:',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on, color: Colors.blue),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Koordinat GPS:',
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.grey[600]),
+                                  ),
+                                  Text(
+                                    'Lat: ${prospect['latitude']}, Lng: ${prospect['longitude']}',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                // TODO: Open in maps
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Membuka di peta...')),
+                                );
+                              },
+                              icon: Icon(Icons.open_in_new, color: Colors.blue),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              // Content
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Basic Info
-                      _buildRowInline(
-                          'Nama Klien', prospect['client_name'] ?? 'N/A'),
-                      _buildRowInline(
-                          'PIC', prospect['employee_name'] ?? 'N/A'),
-                      _buildRowInline('Alamat', prospect['address'] ?? 'N/A'),
-                      _buildRowInline('Tujuan Kunjungan',
-                          prospect['visit_purpose'] ?? 'N/A'),
-                      _buildRowInline('Status', prospect['status'] ?? 'N/A'),
-                      _buildRowInline('Nilai Potensial',
-                          'Rp ${_formatCurrency(prospect['potential_value'] ?? 0)}'),
-                      _buildRowInline('Waktu Kunjungan',
-                          _formatDateInline(prospect['start_time'])),
-
-                      if (prospect['notes'] != null &&
-                          prospect['notes'].toString().isNotEmpty) ...[
-                        SizedBox(height: 16),
-                        Text(
-                          'Catatan:',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        SizedBox(height: 8),
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: Text(prospect['notes'].toString()),
-                        ),
-                      ],
-
-                      // Photo Section
-                      if (prospect['photo_url'] != null &&
-                          prospect['photo_url'].toString().isNotEmpty) ...[
-                        SizedBox(height: 20),
-                        Text(
-                          'Foto Kunjungan:',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        SizedBox(height: 8),
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: CachedNetworkImage(
-                              imageUrl: prospect['photo_url'].toString(),
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: Colors.grey[100],
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) {
-                                return Container(
-                                  color: Colors.grey[100],
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.broken_image,
-                                          size: 48, color: Colors.grey[400]),
-                                      SizedBox(height: 8),
-                                      Text('Foto tidak dapat dimuat',
-                                          style: TextStyle(
-                                              color: Colors.grey[600])),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      // Location Section
-                      if (prospect['latitude'] != null &&
-                          prospect['longitude'] != null) ...[
-                        SizedBox(height: 20),
-                        Text(
-                          'Lokasi Kunjungan:',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        SizedBox(height: 8),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue[200]!),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.location_on, color: Colors.blue),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Koordinat GPS:',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600]),
-                                    ),
-                                    Text(
-                                      'Lat: ${prospect['latitude']}, Lng: ${prospect['longitude']}',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w500),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  // TODO: Open in maps
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text('Membuka di peta...')),
-                                  );
-                                },
-                                icon:
-                                    Icon(Icons.open_in_new, color: Colors.blue),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
-              ),
+Widget _buildDetailRow(String label, String value) {
+  return Padding(
+    padding: EdgeInsets.only(bottom: 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
             ),
           ),
-          Text(': '),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
+        ),
+        Text(': '),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.w500),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
-  void _showVisitDetail(BuildContext context, Map<String, dynamic> visit) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          width: double.infinity,
-          constraints: BoxConstraints(maxHeight: 600),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
+void _showVisitDetail(BuildContext context, Map<String, dynamic> visit) {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(maxHeight: 600),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.schedule, color: Colors.orange, size: 24),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Detail Kunjungan Pending',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.schedule, color: Colors.orange, size: 24),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Detail Kunjungan Pending',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.close),
-                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildRowInline(
+                        'Nama Prospek',
+                        visit['prospect_name'] ??
+                            visit['client_name'] ??
+                            'N/A'),
+                    _buildRowInline('PIC', visit['employee_name'] ?? 'N/A'),
+                    _buildRowInline(
+                        'Tanggal Kunjungan', visit['start_time'] ?? 'N/A'),
+                    _buildRowInline('Status', visit['status'] ?? 'N/A'),
+                    _buildRowInline('Alamat', visit['address'] ?? 'N/A'),
+
+                    // Photo Section
+                    if (visit['photo_url'] != null &&
+                        visit['photo_url'].toString().isNotEmpty) ...[
+                      SizedBox(height: 20),
+                      Text(
+                        'Foto Kunjungan:',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: visit['photo_url'].toString(),
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[100],
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) {
+                              return Container(
+                                color: Colors.grey[100],
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image,
+                                        size: 48, color: Colors.grey[400]),
+                                    SizedBox(height: 8),
+                                    Text('Foto tidak dapat dimuat',
+                                        style:
+                                            TextStyle(color: Colors.grey[600])),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    // Location Section
+                    if (visit['latitude'] != null &&
+                        visit['longitude'] != null) ...[
+                      SizedBox(height: 20),
+                      Text(
+                        'Lokasi Kunjungan:',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Koordinat GPS:',
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.grey[600]),
+                                  ),
+                                  Text(
+                                    'Lat: ${visit['latitude']}, Lng: ${visit['longitude']}',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Membuka di peta...')),
+                                );
+                              },
+                              icon:
+                                  Icon(Icons.open_in_new, color: Colors.orange),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              // Content
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildRowInline(
-                          'Nama Prospek',
-                          visit['prospect_name'] ??
-                              visit['client_name'] ??
-                              'N/A'),
-                      _buildRowInline('PIC', visit['employee_name'] ?? 'N/A'),
-                      _buildRowInline(
-                          'Tanggal Kunjungan', visit['start_time'] ?? 'N/A'),
-                      _buildRowInline('Status', visit['status'] ?? 'N/A'),
-                      _buildRowInline('Alamat', visit['address'] ?? 'N/A'),
-
-                      // Photo Section
-                      if (visit['photo_url'] != null &&
-                          visit['photo_url'].toString().isNotEmpty) ...[
-                        SizedBox(height: 20),
-                        Text(
-                          'Foto Kunjungan:',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        SizedBox(height: 8),
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: CachedNetworkImage(
-                              imageUrl: visit['photo_url'].toString(),
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: Colors.grey[100],
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) {
-                                return Container(
-                                  color: Colors.grey[100],
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.broken_image,
-                                          size: 48, color: Colors.grey[400]),
-                                      SizedBox(height: 8),
-                                      Text('Foto tidak dapat dimuat',
-                                          style: TextStyle(
-                                              color: Colors.grey[600])),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      // Location Section
-                      if (visit['latitude'] != null &&
-                          visit['longitude'] != null) ...[
-                        SizedBox(height: 20),
-                        Text(
-                          'Lokasi Kunjungan:',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        SizedBox(height: 8),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.orange[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.orange[200]!),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.location_on, color: Colors.orange),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Koordinat GPS:',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600]),
-                                    ),
-                                    Text(
-                                      'Lat: ${visit['latitude']}, Lng: ${visit['longitude']}',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w500),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text('Membuka di peta...')),
-                                  );
-                                },
-                                icon: Icon(Icons.open_in_new,
-                                    color: Colors.orange),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  // Helper methods untuk AdminReportsTab
-  String _formatCurrency(dynamic value) {
-    if (value == null) return '0';
-    final number = double.tryParse(value.toString()) ?? 0;
-    if (number >= 1000000000) {
-      return '${(number / 1000000000).toStringAsFixed(1)}M';
-    } else if (number >= 1000000) {
-      return '${(number / 1000000).toStringAsFixed(1)}Jt';
-    } else if (number >= 1000) {
-      return '${(number / 1000).toStringAsFixed(0)}K';
-    }
-    return number.toStringAsFixed(0);
+// Helper methods untuk AdminReportsTab
+String _formatCurrency(dynamic value) {
+  if (value == null) return '0';
+  final number = double.tryParse(value.toString()) ?? 0;
+  if (number >= 1000000000) {
+    return '${(number / 1000000000).toStringAsFixed(1)}M';
+  } else if (number >= 1000000) {
+    return '${(number / 1000000).toStringAsFixed(1)}Jt';
+  } else if (number >= 1000) {
+    return '${(number / 1000).toStringAsFixed(0)}K';
   }
+  return number.toStringAsFixed(0);
+}
 
-  String _formatDateInline(String? dateStr) {
-    if (dateStr == null) return 'N/A';
-    try {
-      final date = DateTime.parse(dateStr);
-      return '${date.day}/${date.month}/${date.year}';
-    } catch (e) {
-      return dateStr;
-    }
+String _formatDateInline(String? dateStr) {
+  if (dateStr == null) return 'N/A';
+  try {
+    final date = DateTime.parse(dateStr);
+    return '${date.day}/${date.month}/${date.year}';
+  } catch (e) {
+    return dateStr;
   }
+}
 
-  Widget _buildRowInline(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
-              ),
+Widget _buildRowInline(String label, String value) {
+  return Padding(
+    padding: EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
             ),
           ),
-          Text(': '),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
+        ),
+        Text(': '),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.w500),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
 
 // Daily Attendance Report Screen

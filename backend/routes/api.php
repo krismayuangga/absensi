@@ -217,6 +217,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
             Route::get('dashboard/stats', [AdminController::class, 'getDashboardStats']);
             Route::get('kpi/analytics', [AdminController::class, 'getKpiAnalytics']);
             Route::get('dashboard/attendance-detail', [AdminController::class, 'getDetailedAttendanceReport']);
+            Route::get('dashboard/leave-detail', [AdminController::class, 'getDetailedLeaveReport']);
             Route::get('employees', [AdminController::class, 'getEmployees']);
             Route::get('employees/{id}', [AdminController::class, 'getEmployee']);
             Route::post('employees', [AdminController::class, 'createEmployee']);
