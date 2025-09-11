@@ -695,12 +695,10 @@ class AdminController extends Controller
             // Debug: Check if table has any data
             $totalKpiVisits = \App\Models\KpiVisit::count();
             
-            // Overall KPI statistics
-            $totalVisitsToday = \App\Models\KpiVisit::whereDate('start_time', today())->count();
+            // Overall KPI statistics - Fixed queries for better date handling
+            $totalVisitsToday = \App\Models\KpiVisit::whereBetween('start_time', [now()->startOfDay(), now()->endOfDay()])->count();
             $totalVisitsWeek = \App\Models\KpiVisit::whereBetween('start_time', [now()->startOfWeek(), now()->endOfWeek()])->count();
-            $totalVisitsMonth = \App\Models\KpiVisit::whereMonth('start_time', now()->month)
-                ->whereYear('start_time', now()->year)
-                ->count();
+            $totalVisitsMonth = \App\Models\KpiVisit::whereBetween('start_time', [now()->startOfMonth(), now()->endOfMonth()])->count();
             
             // Alternative query for monthly data with broader date range
             $startOfMonth = now()->startOfMonth();
@@ -763,7 +761,7 @@ class AdminController extends Controller
                         // Add location data for detail view
                         'latitude' => $visit->latitude,
                         'longitude' => $visit->longitude,
-                        'photo_url' => $visit->photo_url,
+                        'photo_url' => $visit->photo_path ? url('storage/' . $visit->photo_path) : null,
                     ];
                 });
 
