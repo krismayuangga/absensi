@@ -228,6 +228,9 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
             Route::put('leaves/{id}/status', [AdminController::class, 'updateLeaveStatus']);
             Route::get('master-data', [AdminController::class, 'getMasterData']);
             
+            // Export data routes
+            Route::post('export', [AdminController::class, 'exportData']);
+            
             // Admin Info & Media management
             Route::prefix('content')->group(function () {
                 // Announcements management

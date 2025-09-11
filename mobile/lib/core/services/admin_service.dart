@@ -638,4 +638,62 @@ class AdminService {
       };
     }
   }
+
+  /// Export data to various formats
+  Future<Map<String, dynamic>> exportData(Map<String, dynamic> params) async {
+    try {
+      print('🔄 ADMIN SERVICE: Calling export data API...');
+      print('📊 ADMIN SERVICE: Export params: $params');
+      _addAuthToken();
+
+      final response = await _dio.post('/admin/export',
+          data: params,
+          options: Options(
+            responseType: ResponseType.json,
+            receiveTimeout: const Duration(
+                minutes: 5), // Extended timeout for large exports
+          ));
+
+      print('📊 ADMIN SERVICE: Export response status: ${response.statusCode}');
+      print('📊 ADMIN SERVICE: Export response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        // If response contains download URL, handle it
+        if (response.data['download_url'] != null) {
+          // For now, we'll return success and let the frontend handle the download
+          return {
+            'success': true,
+            'data': response.data['data'],
+            'download_url': response.data['download_url'],
+            'filename': response.data['filename'],
+            'message': 'Export completed successfully',
+          };
+        }
+
+        return {
+          'success': true,
+          'data': response.data['data'],
+          'message':
+              response.data['message'] ?? 'Export completed successfully',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': response.data['message'] ?? 'Failed to export data',
+      };
+    } catch (e) {
+      print('❌ Error exporting data: $e');
+      if (e is DioException && e.response != null) {
+        return {
+          'success': false,
+          'message': e.response?.data['message'] ?? 'Failed to export data',
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
 }

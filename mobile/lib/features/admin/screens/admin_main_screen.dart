@@ -5,6 +5,7 @@ import '../widgets/employee_form_dialog.dart';
 import '../views/reports/yearly_leave_report_screen.dart';
 import '../views/reports/kpi_report_screen.dart';
 import '../views/reports/productivity_analytics_screen.dart';
+import '../views/reports/export_data_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -3722,7 +3723,7 @@ class _AdminReportsTabState extends State<AdminReportsTab> {
                       'Export data ke Excel/PDF',
                       Icons.file_download,
                       Colors.red,
-                      onTap: () => _showComingSoon(context, 'Export Data'),
+                      onTap: () => _showExportData(context),
                     ),
                   ],
                 ),
@@ -3837,6 +3838,15 @@ class _AdminReportsTabState extends State<AdminReportsTab> {
       context,
       MaterialPageRoute(
         builder: (context) => const ProductivityAnalyticsScreen(),
+      ),
+    );
+  }
+
+  void _showExportData(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ExportDataScreen(),
       ),
     );
   }

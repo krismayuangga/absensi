@@ -605,6 +605,35 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
+  // Export data functionality
+  Future<bool> exportData(Map<String, dynamic> params) async {
+    try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      print('🔄 ADMIN: Exporting data with params: $params');
+
+      final result = await _adminService.exportData(params);
+
+      if (result['success'] == true) {
+        print('✅ ADMIN: Export successful');
+        return true;
+      } else {
+        _errorMessage = result['message'] ?? 'Export failed';
+        print('❌ ADMIN: Export failed: $_errorMessage');
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+      print('❌ Error exporting data: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();
