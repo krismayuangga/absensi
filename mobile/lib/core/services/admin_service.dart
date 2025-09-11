@@ -556,4 +556,46 @@ class AdminService {
       };
     }
   }
+
+  /// Get detailed attendance report for a specific date
+  Future<Map<String, dynamic>> getDetailedAttendanceReport(
+      Map<String, dynamic> params) async {
+    try {
+      print('🔄 ADMIN SERVICE: Calling detailed attendance report API...');
+      _addAuthToken();
+
+      final response = await _dio.get('/admin/dashboard/attendance-detail',
+          queryParameters: params);
+      print(
+          '📊 ADMIN SERVICE: Attendance report response status: ${response.statusCode}');
+      print(
+          '📊 ADMIN SERVICE: Attendance report response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': response.data['data'],
+        };
+      }
+
+      return {
+        'success': false,
+        'message':
+            response.data['message'] ?? 'Failed to get attendance report',
+      };
+    } catch (e) {
+      print('❌ Error getting attendance report: $e');
+      if (e is DioException && e.response != null) {
+        return {
+          'success': false,
+          'message':
+              e.response?.data['message'] ?? 'Failed to get attendance report',
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
 }

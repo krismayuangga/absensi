@@ -31,7 +31,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.primaryColor,
         elevation: 0,
@@ -214,7 +214,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
           style: GoogleFonts.poppins(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
-            color: theme.textTheme.bodyLarge?.color,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
         SizedBox(height: 6.h),
@@ -327,7 +327,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
     return Container(
       padding: EdgeInsets.all(8.w),
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8.r),
         boxShadow: [
           BoxShadow(
@@ -359,7 +359,7 @@ class _KPIMainScreenState extends State<KPIMainScreen> {
             style: GoogleFonts.poppins(
               fontSize: 14.sp,
               fontWeight: FontWeight.w700,
-              color: theme.textTheme.bodyLarge?.color,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
           Text(

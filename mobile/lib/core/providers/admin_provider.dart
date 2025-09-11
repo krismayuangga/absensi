@@ -547,6 +547,35 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
+  // Attendance Report methods
+  Future<Map<String, dynamic>> getDetailedAttendanceReport({
+    String? dateRange = 'day',
+    String? date,
+    String? status,
+  }) async {
+    try {
+      print('🔄 ADMIN: Getting detailed attendance report...');
+
+      final params = <String, dynamic>{};
+      if (dateRange != null) params['date_range'] = dateRange;
+      if (date != null) params['date'] = date;
+      if (status != null) params['status'] = status;
+
+      print('📊 ADMIN: Report params: $params');
+
+      final result = await _adminService.getDetailedAttendanceReport(params);
+      print('📊 ADMIN: Report result: $result');
+
+      return result;
+    } catch (e) {
+      print('❌ Error getting attendance report: $e');
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

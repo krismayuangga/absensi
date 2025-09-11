@@ -3719,7 +3719,7 @@ class AdminReportsTab extends StatelessWidget {
                       Icons.calendar_view_day,
                       Colors.green,
                       onTap: () =>
-                          _showComingSoon(context, 'Laporan Kehadiran Harian'),
+                          _showDailyAttendanceReport(context, adminProvider),
                     ),
                     _buildReportCard(
                       context,
@@ -3728,7 +3728,7 @@ class AdminReportsTab extends StatelessWidget {
                       Icons.calendar_month,
                       Colors.blue,
                       onTap: () =>
-                          _showComingSoon(context, 'Laporan Kehadiran Bulanan'),
+                          _showMonthlyAttendanceReport(context, adminProvider),
                     ),
                     _buildReportCard(
                       context,
@@ -3865,6 +3865,28 @@ class AdminReportsTab extends StatelessWidget {
             child: const Text('OK'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showDailyAttendanceReport(
+      BuildContext context, AdminProvider adminProvider) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            DailyAttendanceReportScreen(adminProvider: adminProvider),
+      ),
+    );
+  }
+
+  void _showMonthlyAttendanceReport(
+      BuildContext context, AdminProvider adminProvider) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            MonthlyAttendanceReportScreen(adminProvider: adminProvider),
       ),
     );
   }
@@ -4358,5 +4380,882 @@ class AdminReportsTab extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// Daily Attendance Report Screen
+class DailyAttendanceReportScreen extends StatefulWidget {
+  final AdminProvider adminProvider;
+
+  const DailyAttendanceReportScreen({Key? key, required this.adminProvider})
+      : super(key: key);
+
+  @override
+  State<DailyAttendanceReportScreen> createState() =>
+      _DailyAttendanceReportScreenState();
+}
+
+class _DailyAttendanceReportScreenState
+    extends State<DailyAttendanceReportScreen> {
+  DateTime _selectedDate = DateTime.now();
+  List<Map<String, dynamic>> _attendanceData = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use WidgetsBinding to delay the API call until after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAttendanceData();
+    });
+  }
+
+  Future<void> _loadAttendanceData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Format date for API call
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+
+      // Call the correct detailed attendance report API
+      final result = await widget.adminProvider.getDetailedAttendanceReport(
+        dateRange: 'day',
+        date: dateStr,
+      );
+
+      // Process the response correctly
+      if (result['success'] == true) {
+        setState(() {
+          // Convert the response data to the expected format
+          final data = result['data'];
+          if (data is List) {
+            _attendanceData = data.cast<Map<String, dynamic>>();
+          } else {
+            _attendanceData = [];
+          }
+        });
+      } else {
+        setState(() {
+          _errorMessage = result['message'] ?? 'Failed to load attendance data';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Laporan Kehadiran Harian'),
+        backgroundColor: Theme.of(context).primaryColor,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadAttendanceData,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Date Picker Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.grey[50],
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today, color: Colors.blue),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tanggal: ${DateFormat('dd MMMM yyyy', 'id_ID').format(_selectedDate)}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _selectDate,
+                  icon: const Icon(Icons.edit_calendar, size: 18),
+                  label: const Text('Ubah'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Summary Section
+          if (_attendanceData.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ringkasan Kehadiran',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildSummaryItem(
+                              'Total Hadir',
+                              '${_attendanceData.length}',
+                              Icons.people,
+                              Colors.green,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildSummaryItem(
+                              'Terlambat',
+                              '${_attendanceData.where((a) => a['status'] == 'Terlambat').length}',
+                              Icons.access_time,
+                              Colors.orange,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildSummaryItem(
+                              'Pulang Cepat',
+                              '${_attendanceData.where((a) => a['status'] == 'Pulang Cepat').length}',
+                              Icons.schedule,
+                              Colors.red,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildSummaryItem(
+                              'Lembur',
+                              '${_attendanceData.where((a) => a['status'] == 'Lembur').length}',
+                              Icons.work,
+                              Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Attendance List
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error',
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadAttendanceData,
+                              child: const Text('Coba Lagi'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _attendanceData.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.inbox_outlined,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Tidak ada data kehadiran',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Belum ada karyawan yang absen pada tanggal ini',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Colors.grey[500],
+                                      ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _attendanceData.length,
+                            itemBuilder: (context, index) {
+                              final attendance = _attendanceData[index];
+                              return _buildAttendanceCard(attendance);
+                            },
+                          ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(
+      String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceCard(Map<String, dynamic> attendance) {
+    final status = attendance['status'] ?? 'Normal';
+    final statusColor = _getAttendanceStatusColor(status);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          backgroundColor: statusColor,
+          child: Text(
+            _getEmployeeInitial(attendance['nama']),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          attendance['nama'] ?? 'Unknown Employee',
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ID: ${attendance['kode_karyawan'] ?? 'N/A'}'),
+            Text(
+                '${attendance['posisi'] ?? 'N/A'} - ${attendance['departemen'] ?? 'N/A'}'),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: statusColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                status,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDetailItem(
+                          'Jam Masuk', attendance['jam_masuk'] ?? '-'),
+                    ),
+                    Expanded(
+                      child: _buildDetailItem(
+                          'Jam Keluar', attendance['jam_keluar'] ?? '-'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDetailItem(
+                          'Jam Kerja', '${attendance['jam_kerja'] ?? 0} jam'),
+                    ),
+                    Expanded(
+                      child: _buildDetailItem(
+                          'Tanggal', attendance['tanggal'] ?? '-'),
+                    ),
+                  ],
+                ),
+                if (attendance['lokasi_masuk'] != null) ...[
+                  const SizedBox(height: 12),
+                  _buildDetailItem('Lokasi Masuk', attendance['lokasi_masuk']),
+                ],
+                if (attendance['lokasi_keluar'] != null) ...[
+                  const SizedBox(height: 8),
+                  _buildDetailItem(
+                      'Lokasi Keluar', attendance['lokasi_keluar']),
+                ],
+                if (attendance['keterangan'] != null &&
+                    attendance['keterangan'] != '-') ...[
+                  const SizedBox(height: 8),
+                  _buildDetailItem('Keterangan', attendance['keterangan']),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getAttendanceStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'terlambat':
+        return Colors.orange;
+      case 'pulang cepat':
+        return Colors.red;
+      case 'lembur':
+        return Colors.blue;
+      case 'normal':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getEmployeeInitial(dynamic name) {
+    final nameStr = name?.toString() ?? 'U';
+    if (nameStr.isEmpty) return 'U';
+    return nameStr.substring(0, 1).toUpperCase();
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      locale: const Locale('id', 'ID'),
+    );
+
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+      _loadAttendanceData();
+    }
+  }
+}
+
+// Monthly Attendance Report Screen
+class MonthlyAttendanceReportScreen extends StatefulWidget {
+  final AdminProvider adminProvider;
+
+  const MonthlyAttendanceReportScreen({
+    Key? key,
+    required this.adminProvider,
+  }) : super(key: key);
+
+  @override
+  _MonthlyAttendanceReportScreenState createState() =>
+      _MonthlyAttendanceReportScreenState();
+}
+
+class _MonthlyAttendanceReportScreenState
+    extends State<MonthlyAttendanceReportScreen> {
+  List<Map<String, dynamic>> _monthlyData = [];
+  bool _isLoading = false;
+  DateTime _selectedMonth = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    // Use WidgetsBinding to delay the API call until after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMonthlyData();
+    });
+  }
+
+  Future<void> _loadMonthlyData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final String dateStr = DateFormat('yyyy-MM').format(_selectedMonth);
+      final result = await widget.adminProvider.getDetailedAttendanceReport(
+        dateRange: 'month',
+        date: dateStr,
+      );
+
+      if (result['success'] == true) {
+        final List<dynamic> data = result['data'] ?? [];
+        setState(() {
+          _monthlyData = data.cast<Map<String, dynamic>>();
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Error loading data')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Laporan Kehadiran Bulanan'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            onPressed: _selectMonth,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Month Selector
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.blue.withOpacity(0.1),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_month, color: Colors.blue),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Bulan: ${DateFormat('MMMM yyyy', 'id_ID').format(_selectedMonth)}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                if (_isLoading)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+          ),
+
+          // Summary Cards
+          if (_monthlyData.isNotEmpty) _buildMonthlySummary(),
+
+          // Data List
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _monthlyData.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.inbox_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Tidak ada data kehadiran',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Belum ada data kehadiran pada bulan ini',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.grey[500],
+                                  ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _monthlyData.length,
+                        itemBuilder: (context, index) {
+                          final employeeData = _monthlyData[index];
+                          return _buildEmployeeMonthlyCard(employeeData);
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthlySummary() {
+    int totalEmployees = _monthlyData.length;
+    int totalHadir = 0;
+    int totalTerlambat = 0;
+    int totalAbsen = 0;
+
+    for (var employee in _monthlyData) {
+      totalHadir += (employee['total_hadir'] as int? ?? 0);
+      totalTerlambat += (employee['total_terlambat'] as int? ?? 0);
+      totalAbsen += (employee['total_absen'] as int? ?? 0);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildSummaryItem(
+              'Total\nKaryawan',
+              totalEmployees.toString(),
+              Icons.people,
+              Colors.blue,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildSummaryItem(
+              'Total\nKehadiran',
+              totalHadir.toString(),
+              Icons.check_circle,
+              Colors.green,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildSummaryItem(
+              'Total\nTerlambat',
+              totalTerlambat.toString(),
+              Icons.schedule,
+              Colors.orange,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildSummaryItem(
+              'Total\nAbsen',
+              totalAbsen.toString(),
+              Icons.cancel,
+              Colors.red,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(
+      String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmployeeMonthlyCard(Map<String, dynamic> employeeData) {
+    final String nama = employeeData['nama'] ?? 'Unknown Employee';
+    final String kodeKaryawan = employeeData['kode_karyawan'] ?? 'N/A';
+    final String posisi = employeeData['posisi'] ?? 'N/A';
+    final String departemen = employeeData['departemen'] ?? 'N/A';
+    final int totalHadir = employeeData['total_hadir'] ?? 0;
+    final int totalTerlambat = employeeData['total_terlambat'] ?? 0;
+    final int totalAbsen = employeeData['total_absen'] ?? 0;
+    final double persentaseKehadiran =
+        (employeeData['persentase_kehadiran'] ?? 0.0).toDouble();
+
+    Color performanceColor = Colors.green;
+    if (persentaseKehadiran < 70) {
+      performanceColor = Colors.red;
+    } else if (persentaseKehadiran < 85) {
+      performanceColor = Colors.orange;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          backgroundColor: performanceColor,
+          child: Text(
+            _getEmployeeInitial(nama),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          nama,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ID: $kodeKaryawan'),
+            Text('$posisi - $departemen'),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: performanceColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${persentaseKehadiran.toStringAsFixed(1)}% Kehadiran',
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child:
+                          _buildDetailItem('Total Hadir', '$totalHadir hari'),
+                    ),
+                    Expanded(
+                      child: _buildDetailItem(
+                          'Total Terlambat', '$totalTerlambat hari'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child:
+                          _buildDetailItem('Total Absen', '$totalAbsen hari'),
+                    ),
+                    Expanded(
+                      child: _buildDetailItem('Persentase Kehadiran',
+                          '${persentaseKehadiran.toStringAsFixed(1)}%'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Status Performa:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: performanceColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: performanceColor),
+                  ),
+                  child: Text(
+                    _getPerformanceStatus(persentaseKehadiran),
+                    style: TextStyle(
+                      color: performanceColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getEmployeeInitial(String name) {
+    if (name.isEmpty) return 'U';
+    return name.substring(0, 1).toUpperCase();
+  }
+
+  String _getPerformanceStatus(double percentage) {
+    if (percentage >= 95) return 'Sangat Baik';
+    if (percentage >= 85) return 'Baik';
+    if (percentage >= 70) return 'Cukup';
+    return 'Perlu Perbaikan';
+  }
+
+  Future<void> _selectMonth() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedMonth,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      locale: const Locale('id', 'ID'),
+      initialDatePickerMode: DatePickerMode.year,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedMonth = DateTime(picked.year, picked.month, 1);
+      });
+      _loadMonthlyData();
+    }
   }
 }

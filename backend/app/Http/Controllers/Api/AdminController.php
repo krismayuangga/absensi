@@ -153,8 +153,13 @@ class AdminController extends Controller
     public function getDetailedAttendanceReport(Request $request)
     {
         try {
+            $dateRange = $request->get('date_range', 'day'); // day or month
             $date = $request->get('date', Carbon::today()->format('Y-m-d'));
             $status = $request->get('status'); // present, late, early_leave, overtime
+            
+            if ($dateRange === 'month') {
+                return $this->getMonthlyAttendanceReport($request);
+            }
             
             $query = Attendance::with(['user:id,name,employee_id,position,department'])
                 ->whereDate('date', $date);
@@ -215,17 +220,83 @@ class AdminController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Detail kehadiran berhasil dimuat',
-                'data' => [
-                    'tanggal' => Carbon::parse($date)->format('d/m/Y'),
-                    'total' => $attendances->count(),
-                    'kehadiran' => $attendances,
-                ],
+                'data' => $attendances,
             ]);
             
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memuat detail kehadiran: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get monthly attendance report
+     */
+    private function getMonthlyAttendanceReport(Request $request)
+    {
+        try {
+            $date = $request->get('date', Carbon::now()->format('Y-m'));
+            $startDate = Carbon::parse($date . '-01');
+            $endDate = $startDate->copy()->endOfMonth();
+            
+            // Get all employees
+            $employees = User::where('role', 'employee')
+                ->where('is_active', true)
+                ->get();
+            
+            $monthlyData = [];
+            
+            foreach ($employees as $employee) {
+                // Get all attendances for this employee in the month
+                $attendances = Attendance::where('user_id', $employee->id)
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->get();
+                
+                $totalHadir = $attendances->where('status', 'present')->count();
+                $totalTerlambat = $attendances->filter(function ($attendance) {
+                    return $attendance->clock_in_time && 
+                           Carbon::parse($attendance->clock_in_time)->format('H:i') > '08:30';
+                })->count();
+                
+                // Calculate working days in month (excluding weekends)
+                $workingDays = 0;
+                $current = $startDate->copy();
+                while ($current->lte($endDate)) {
+                    if ($current->isWeekday()) {
+                        $workingDays++;
+                    }
+                    $current->addDay();
+                }
+                
+                $totalAbsen = $workingDays - $totalHadir;
+                $persentaseKehadiran = $workingDays > 0 ? ($totalHadir / $workingDays) * 100 : 0;
+                
+                $monthlyData[] = [
+                    'id' => $employee->id,
+                    'nama' => $employee->name,
+                    'kode_karyawan' => $employee->employee_id,
+                    'posisi' => $employee->position ?? '-',
+                    'departemen' => $employee->department ?? '-',
+                    'total_hadir' => $totalHadir,
+                    'total_terlambat' => $totalTerlambat,
+                    'total_absen' => $totalAbsen,
+                    'total_hari_kerja' => $workingDays,
+                    'persentase_kehadiran' => round($persentaseKehadiran, 1),
+                ];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Laporan kehadiran bulanan berhasil dimuat',
+                'data' => $monthlyData,
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat laporan bulanan: ' . $e->getMessage(),
             ], 500);
         }
     }
