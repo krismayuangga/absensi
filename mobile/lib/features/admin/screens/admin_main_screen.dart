@@ -3,6 +3,7 @@ import '../../../core/providers/admin_provider.dart';
 import '../../../core/providers/admin_content_provider.dart';
 import '../widgets/employee_form_dialog.dart';
 import '../views/reports/yearly_leave_report_screen.dart';
+import '../views/reports/kpi_report_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -3657,52 +3658,6 @@ class _AdminReportsTabState extends State<AdminReportsTab> {
               ),
               const SizedBox(height: 16),
 
-              // Quick Stats from Dashboard
-              if (adminProvider.dashboardStats != null) ...[
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Ringkasan Hari Ini',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildQuickStat(
-                                context,
-                                'Total Karyawan',
-                                '${adminProvider.dashboardStats?['stats']?['total_employees'] ?? 0}',
-                                Icons.people,
-                                Colors.blue,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildQuickStat(
-                                context,
-                                'Kehadiran Hari Ini',
-                                '${adminProvider.dashboardStats?['stats']?['today_attendance'] ?? 0}',
-                                Icons.access_time,
-                                Colors.green,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
               // Report Menu Grid
               Text(
                 'Jenis Laporan',
@@ -3750,7 +3705,7 @@ class _AdminReportsTabState extends State<AdminReportsTab> {
                       'Performance indicator karyawan',
                       Icons.trending_up,
                       Colors.purple,
-                      onTap: () => _showComingSoon(context, 'Laporan KPI'),
+                      onTap: () => _showKpiReport(context),
                     ),
                     _buildReportCard(
                       context,
@@ -3864,6 +3819,15 @@ class _AdminReportsTabState extends State<AdminReportsTab> {
       context,
       MaterialPageRoute(
         builder: (context) => const YearlyLeaveReportScreen(),
+      ),
+    );
+  }
+
+  void _showKpiReport(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const KpiReportScreen(),
       ),
     );
   }
