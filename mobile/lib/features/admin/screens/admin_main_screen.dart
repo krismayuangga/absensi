@@ -3039,8 +3039,23 @@ class _AdminAnnouncementsTabState extends State<AdminAnnouncementsTab> {
   }
 }
 
-class AdminMediaTab extends StatelessWidget {
+class AdminMediaTab extends StatefulWidget {
   const AdminMediaTab({Key? key}) : super(key: key);
+
+  @override
+  State<AdminMediaTab> createState() => _AdminMediaTabState();
+}
+
+class _AdminMediaTabState extends State<AdminMediaTab> {
+  @override
+  void initState() {
+    super.initState();
+    // Load media when tab is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AdminContentProvider>(context, listen: false)
+          .loadMedia(refresh: true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -3072,115 +3087,176 @@ class AdminMediaTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.8,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                ),
-                itemCount: 6, // Mock data
-                itemBuilder: (context, index) {
-                  return Card(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(4),
+              child: Consumer<AdminContentProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoadingMedia) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (provider.media.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.photo_library_outlined,
+                              size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Belum ada media',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Upload media pertama dengan tombol "Upload Media"',
+                            style: TextStyle(color: Colors.grey[500]),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 1.0,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: provider.media.length,
+                    itemBuilder: (context, index) {
+                      final media = provider.media[index];
+                      return Card(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(4),
+                                  ),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(4),
+                                  ),
+                                  child: media['file_type'] == 'image'
+                                      ? _buildImageWidget(media)
+                                      : Icon(
+                                          media['file_type'] == 'document'
+                                              ? Icons.description
+                                              : Icons.insert_drive_file,
+                                          size: 48,
+                                          color: Colors.grey[600],
+                                        ),
+                                ),
                               ),
                             ),
-                            child: Icon(
-                              index % 2 == 0 ? Icons.image : Icons.description,
-                              size: 48,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Media ${index + 1}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 14,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  index % 2 == 0 ? 'Gambar' : 'Dokumen',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                            Expanded(
+                              flex: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      '${index + 1} hari lalu',
-                                      style: TextStyle(
-                                        color: Colors.grey[500],
-                                        fontSize: 10,
+                                    Flexible(
+                                      child: Text(
+                                        media['title'] ?? 'Untitled Media',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 13,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    PopupMenuButton<String>(
-                                      icon: Icon(
-                                        Icons.more_vert,
-                                        size: 16,
-                                        color: Colors.grey[600],
+                                    const SizedBox(height: 2),
+                                    Flexible(
+                                      child: Text(
+                                        media['formatted_size'] ??
+                                            'Unknown size',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 11,
+                                        ),
                                       ),
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem(
-                                          value: 'edit',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.edit, size: 16),
-                                              SizedBox(width: 8),
-                                              Text('Edit'),
-                                            ],
+                                    ),
+                                    const Spacer(),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            media['created_at'] ?? '',
+                                            style: TextStyle(
+                                              color: Colors.grey[500],
+                                              fontSize: 10,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        const PopupMenuItem(
-                                          value: 'delete',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.delete,
-                                                  color: Colors.red, size: 16),
-                                              SizedBox(width: 8),
-                                              Text('Hapus'),
-                                            ],
+                                        PopupMenuButton<String>(
+                                          icon: Icon(
+                                            Icons.more_vert,
+                                            size: 16,
+                                            color: Colors.grey[600],
                                           ),
+                                          itemBuilder: (context) => [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 16),
+                                                  SizedBox(width: 8),
+                                                  Text('Edit'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.delete,
+                                                      color: Colors.red,
+                                                      size: 16),
+                                                  SizedBox(width: 8),
+                                                  Text('Hapus'),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                          onSelected: (value) {
+                                            if (value == 'delete') {
+                                              _showDeleteMediaConfirmation(
+                                                  context,
+                                                  int.tryParse(media['id']
+                                                          .toString()) ??
+                                                      0);
+                                            }
+                                          },
                                         ),
                                       ],
-                                      onSelected: (value) {
-                                        if (value == 'delete') {
-                                          _showDeleteMediaConfirmation(context);
-                                        }
-                                      },
                                     ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   );
                 },
               ),
@@ -3198,7 +3274,7 @@ class AdminMediaTab extends StatelessWidget {
     );
   }
 
-  void _showDeleteMediaConfirmation(BuildContext context) {
+  void _showDeleteMediaConfirmation(BuildContext context, int mediaId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -3210,17 +3286,77 @@ class AdminMediaTab extends StatelessWidget {
             child: const Text('Batal'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Media berhasil dihapus')),
-              );
+              final provider =
+                  Provider.of<AdminContentProvider>(context, listen: false);
+              final success = await provider.deleteMedia(mediaId);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Media berhasil dihapus')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content:
+                        Text(provider.errorMessage ?? 'Gagal menghapus media'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Hapus'),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildImageWidget(Map<String, dynamic> media) {
+    final imageUrl = media['file_url'];
+    print('🖼️ Building image widget for URL: $imageUrl');
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      httpHeaders: {
+        'Accept': 'image/*',
+      },
+      placeholder: (context, url) {
+        print('⏳ Loading image: $url');
+        return Container(
+          color: Colors.grey[200],
+          child: const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      },
+      errorWidget: (context, url, error) {
+        print('❌ Image error: $error for URL: $url');
+        return Container(
+          color: Colors.red[100],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.broken_image,
+                size: 32,
+                color: Colors.red[400],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Error',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.red[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
