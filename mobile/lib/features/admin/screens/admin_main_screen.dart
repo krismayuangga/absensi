@@ -2770,20 +2770,25 @@ class _AdminAnnouncementsTabState extends State<AdminAnnouncementsTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Kelola Pengumuman',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                    Expanded(
+                      child: Text(
+                        'Pengumuman',
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     ElevatedButton.icon(
                       onPressed: () => _showCreateAnnouncementDialog(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Buat Pengumuman'),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Buat'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                       ),
                     ),
                   ],
@@ -3413,7 +3418,7 @@ class _CreateAnnouncementDialogState extends State<CreateAnnouncementDialog> {
       bool success;
       if (widget.isEdit && widget.announcement != null) {
         success = await provider.updateAnnouncement(
-          id: widget.announcement!['id'],
+          id: int.tryParse(widget.announcement!['id'].toString()) ?? 0,
           title: _titleController.text,
           content: _contentController.text,
           priority: _priority,

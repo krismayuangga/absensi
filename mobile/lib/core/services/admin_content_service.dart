@@ -103,7 +103,7 @@ class AdminContentService {
       print('📤 Request data: $data');
 
       final response = await _dio.post(
-        '/info-media/announcements', // Use working endpoint
+        '/v1/admin/content/announcements', // Correct admin endpoint with v1 prefix
         data: data,
       );
 
