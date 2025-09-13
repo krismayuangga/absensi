@@ -21,11 +21,12 @@ class AuthProvider extends ChangeNotifier {
 
   // Constructor
   AuthProvider() {
-    _loadStoredAuth();
+    // Remove auto-loading stored auth for production
+    // _loadStoredAuth(); // This will be called manually after successful login
   }
 
-  // Load stored authentication data
-  Future<void> _loadStoredAuth() async {
+  // Load stored authentication data (for manual check)
+  Future<void> loadStoredAuth() async {
     try {
       final authBox = AppConfig.getBox(AppConfig.authBox);
       _token = authBox.get(AppConfig.tokenKey);
@@ -190,9 +191,12 @@ class AuthProvider extends ChangeNotifier {
 
   // Logout
   Future<void> logout() async {
+    debugPrint('Starting logout process...');
+
     try {
       // Call API to logout
       await _apiService.logout();
+      debugPrint('Logout API call successful');
     } catch (e) {
       // Continue with local logout even if API call fails
       debugPrint('Logout API error: $e');
@@ -208,6 +212,7 @@ class AuthProvider extends ChangeNotifier {
     await authBox.delete(AppConfig.tokenKey);
     await authBox.delete(AppConfig.userKey);
 
+    debugPrint('Logout completed. isAuthenticated: $isAuthenticated');
     notifyListeners();
   }
 

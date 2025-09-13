@@ -67,6 +67,7 @@ dev_dependencies:
   json_serializable: ^6.7.1
   build_runner: ^2.4.7
   hive_generator: ^2.0.1
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -80,3 +81,19 @@ flutter:
     - family: CustomIcons
       fonts:
         - asset: assets/fonts/CustomIcons.ttf
+
+# Flutter Launcher Icons Configuration
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/ozonelogo.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/images/ozonelogo.png"
+  windows:
+    generate: true
+    image_path: "assets/images/ozonelogo.png"
+  macos:
+    generate: true
+    image_path: "assets/images/ozonelogo.png"

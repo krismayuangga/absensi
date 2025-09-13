@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
+import '../../main.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/profile_provider.dart';
@@ -526,15 +527,31 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop();
+                // Store navigator reference
+                final navigator = Navigator.of(context);
+
+                // Close dialog first
+                navigator.pop();
+
+                // Perform logout
                 final authProvider =
                     Provider.of<AuthProvider>(context, listen: false);
-                await authProvider.logout();
 
-                if (mounted) {
-                  // Navigate back to login
-                  Navigator.of(context).pushReplacementNamed('/login');
+                try {
+                  await authProvider.logout();
+                  debugPrint('✅ Logout successful, navigating to login...');
+                } catch (e) {
+                  debugPrint('❌ Logout error: $e');
                 }
+
+                // Navigate to login using global navigator key
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  debugPrint('🔄 Attempting navigation to login...');
+                  navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                    '/login',
+                    (Route<dynamic> route) => false,
+                  );
+                });
               },
               child: Text(
                 'Keluar',

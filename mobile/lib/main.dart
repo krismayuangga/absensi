@@ -19,6 +19,9 @@ import 'features/auth/login_screen.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'main_navigation.dart';
 
+// Global navigator key for navigation from anywhere
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -54,6 +57,7 @@ class MyApp extends StatelessWidget {
             ChangeNotifierProvider(create: (_) => AdminContentProvider()),
           ],
           child: MaterialApp(
+            navigatorKey: navigatorKey,
             title: 'Attendance & KPI',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
