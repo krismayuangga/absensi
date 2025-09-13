@@ -794,7 +794,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -820,7 +820,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab>
             isScrollable: false,
             tabs: const [
               Tab(text: 'Konten', icon: Icon(Icons.article, size: 18)),
-              Tab(text: 'Profil', icon: Icon(Icons.person, size: 18)),
               Tab(text: 'Sistem', icon: Icon(Icons.tune, size: 18)),
             ],
           ),
@@ -830,7 +829,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab>
             controller: _tabController,
             children: const [
               AdminContentTab(),
-              AdminProfileTab(),
               AdminSystemTab(),
             ],
           ),
@@ -2310,27 +2308,6 @@ class AdminChartsTab extends StatelessWidget {
           Icon(Icons.bar_chart, size: 64, color: Colors.grey),
           SizedBox(height: 16),
           Text('Charts & Graphs',
-              style: TextStyle(fontSize: 18, color: Colors.grey)),
-          SizedBox(height: 8),
-          Text('Coming Soon...', style: TextStyle(color: Colors.grey)),
-        ],
-      ),
-    );
-  }
-}
-
-class AdminProfileTab extends StatelessWidget {
-  const AdminProfileTab({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.person, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text('Profile Settings',
               style: TextStyle(fontSize: 18, color: Colors.grey)),
           SizedBox(height: 8),
           Text('Coming Soon...', style: TextStyle(color: Colors.grey)),
