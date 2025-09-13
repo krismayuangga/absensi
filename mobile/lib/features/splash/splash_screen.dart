@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -112,8 +114,34 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    // Always navigate to login screen for production
-    Navigator.of(context).pushReplacementNamed('/login');
+    // Check for stored authentication
+    await _checkAuthenticationStatus();
+  }
+
+  Future<void> _checkAuthenticationStatus() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // Load stored auth data with timeout
+      await Future.any([
+        authProvider.loadStoredAuth(),
+        Future.delayed(const Duration(seconds: 10)), // 10 second timeout
+      ]);
+
+      if (authProvider.isAuthenticated) {
+        // User is logged in, navigate to main screen
+        debugPrint('Auto-login successful, navigating to main');
+        Navigator.of(context).pushReplacementNamed('/main');
+      } else {
+        // No valid auth, navigate to login
+        debugPrint('No valid authentication, navigating to login');
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+    } catch (e) {
+      // If there's any error, go to login
+      debugPrint('Error during auth check: $e, navigating to login');
+      Navigator.of(context).pushReplacementNamed('/login');
+    }
   }
 
   @override

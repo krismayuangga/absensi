@@ -35,6 +35,21 @@ class AuthProvider extends ChangeNotifier {
         final userData = authBox.get(AppConfig.userKey);
         if (userData != null && userData is Map) {
           _user = UserModel.fromJson(Map<String, dynamic>.from(userData));
+
+          // Try to validate token, but don't fail if offline
+          try {
+            final isTokenValid = await _validateToken();
+            if (!isTokenValid) {
+              debugPrint('Token validation failed, clearing stored auth');
+              await _clearStoredAuth();
+              return;
+            }
+          } catch (e) {
+            // If network error, assume token is still valid for offline usage
+            debugPrint(
+                'Network error during token validation, allowing offline login: $e');
+          }
+
           notifyListeners();
         }
       }
@@ -42,6 +57,20 @@ class AuthProvider extends ChangeNotifier {
       // Clear corrupted stored auth data
       debugPrint('Error loading stored auth: $e');
       await _clearStoredAuth();
+    }
+  }
+
+  // Validate token by making a test API call
+  Future<bool> _validateToken() async {
+    if (_token == null) return false;
+
+    try {
+      // Try to fetch profile to validate token
+      final response = await _apiService.getProfile();
+      return response['success'] == true;
+    } catch (e) {
+      debugPrint('Token validation error: $e');
+      return false;
     }
   }
 
