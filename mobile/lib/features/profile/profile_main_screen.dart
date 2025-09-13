@@ -99,10 +99,45 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                             ),
                           ],
                         ),
-                        child: Icon(
-                          Icons.person,
-                          size: 40.w,
-                          color: theme.primaryColor,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(40.r),
+                          child: profileData?['avatar'] != null &&
+                                  profileData!['avatar'].toString().isNotEmpty
+                              ? Image.network(
+                                  profileData!['avatar'].toString(),
+                                  width: 80.w,
+                                  height: 80.w,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    print('Error loading avatar: $error');
+                                    return Icon(
+                                      Icons.person,
+                                      size: 40.w,
+                                      color: theme.primaryColor,
+                                    );
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress
+                                                    .expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                    .cumulativeBytesLoaded /
+                                                loadingProgress
+                                                    .expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Icon(
+                                  Icons.person,
+                                  size: 40.w,
+                                  color: theme.primaryColor,
+                                ),
                         ),
                       ),
                       SizedBox(height: 16.h),

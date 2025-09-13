@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../../main.dart';
 import '../../core/providers/auth_provider.dart';
@@ -98,10 +99,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(25.r),
                           ),
-                          child: Icon(
-                            Icons.person,
-                            size: 28.w,
-                            color: Colors.white,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(25.r),
+                            child: Builder(builder: (context) {
+                              print('🖼️ Dashboard Avatar Debug:');
+                              print('   Avatar value: ${user?.avatar}');
+                              print('   Avatar null: ${user?.avatar == null}');
+                              print(
+                                  '   Avatar empty: ${user?.avatar?.isEmpty}');
+
+                              return user?.avatar != null &&
+                                      user!.avatar!.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: user.avatar!,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Icon(
+                                        Icons.person,
+                                        size: 28.w,
+                                        color: Colors.white,
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Icon(
+                                        Icons.person,
+                                        size: 28.w,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.person,
+                                      size: 28.w,
+                                      color: Colors.white,
+                                    );
+                            }),
                           ),
                         ),
                         SizedBox(width: 12.w),
@@ -140,18 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ],
                           ),
                         ),
-                        Container(
-                          padding: EdgeInsets.all(8.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Icon(
-                            Icons.notifications_outlined,
-                            size: 20.w,
-                            color: Colors.white,
-                          ),
-                        ),
+                        _buildNotificationButton(),
                       ],
                     ),
                   ),
@@ -578,6 +596,101 @@ class _DashboardScreenState extends State<DashboardScreen> {
       default:
         return role?.toUpperCase() ?? 'KARYAWAN';
     }
+  }
+
+  // Build notification button with badge and animation
+  Widget _buildNotificationButton() {
+    // For now, simulate unread count - you can connect to actual provider later
+    int unreadCount = 3; // Simulated unread notifications
+
+    return GestureDetector(
+      onTap: () {
+        // Navigate to Info tab with smooth animation
+        _handleInfo();
+
+        // Show snackbar feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '📢 Membuka halaman Informasi & Pengumuman',
+              style: GoogleFonts.inter(fontSize: 12.sp),
+            ),
+            backgroundColor: AppTheme.primaryColor,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16.w),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(8.w),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(8.r),
+          // Add subtle shadow for depth
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Main notification icon
+            Icon(
+              Icons.notifications_outlined,
+              size: 20.w,
+              color: Colors.white,
+            ),
+
+            // Badge for unread count
+            if (unreadCount > 0)
+              Positioned(
+                right: -2.w,
+                top: -2.h,
+                child: Container(
+                  constraints: BoxConstraints(minWidth: 14.w),
+                  height: 14.w,
+                  padding: EdgeInsets.symmetric(horizontal: 2.w),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(7.r),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    unreadCount > 9 ? '9+' : unreadCount.toString(),
+                    style: GoogleFonts.inter(
+                      fontSize: 8.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+
+            // Animated pulse for new notifications
+            if (unreadCount > 0)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   // Handler methods for quick actions

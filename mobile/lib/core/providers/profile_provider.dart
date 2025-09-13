@@ -154,8 +154,7 @@ class ProfileProvider extends ChangeNotifier {
       if (result['success'] == true) {
         // Update local profile picture
         if (_userProfile != null && result['data'] != null) {
-          _userProfile!['data']['profile_picture'] =
-              result['data']['profile_picture'];
+          _userProfile!['data']['avatar'] = result['data']['avatar'];
         }
         _errorMessage = null;
         print('✅ Profile image uploaded successfully');

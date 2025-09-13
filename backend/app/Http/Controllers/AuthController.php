@@ -8,6 +8,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
@@ -154,7 +156,7 @@ class AuthController extends Controller
                     'birth_date' => $user->birth_date,
                     'gender' => $user->gender,
                     'address' => $user->address,
-                    'avatar' => $user->avatar ?: $user->profile_picture,
+                    'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
                     'role' => $user->role ?? 'employee',
                     'status' => $user->is_active ? 'active' : 'inactive',
                     'is_active' => $user->is_active ?? true,
@@ -178,44 +180,88 @@ class AuthController extends Controller
      */
     public function updateProfile(Request $request): JsonResponse
     {
-        $user = Auth::user();
-        
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
-            'phone' => 'sometimes|nullable|string|max:20',
-            'position' => 'sometimes|nullable|string|max:100',
-            'department' => 'sometimes|nullable|string|max:100',
-            'avatar' => 'sometimes|nullable|string',
-        ]);
+        try {
+            $user = Auth::user();
+            
+            // Debug logging
+            Log::info('Update Profile Request', [
+                'files' => $request->allFiles(),
+                'all_data' => $request->all(),
+                'has_avatar_file' => $request->hasFile('avatar')
+            ]);
+            
+            $validator = Validator::make($request->all(), [
+                'name' => 'sometimes|string|max:255',
+                'phone' => 'sometimes|nullable|string|max:20',
+                'birth_date' => 'sometimes|nullable|date',
+                'address' => 'sometimes|nullable|string|max:500',
+                'gender' => 'sometimes|nullable|in:male,female',
+                'position' => 'sometimes|nullable|string|max:100',
+                'department' => 'sometimes|nullable|string|max:100',
+                'avatar' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation error',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Handle avatar upload
+            if ($request->hasFile('avatar')) {
+                // Delete old avatar if exists
+                if ($user->avatar) {
+                    Storage::disk('public')->delete($user->avatar);
+                }
+
+                $avatarFile = $request->file('avatar');
+                $filename = 'avatar_' . $user->id . '_' . time() . '.' . $avatarFile->getClientOriginalExtension();
+                $path = $avatarFile->storeAs('avatars', $filename, 'public');
+                $user->avatar = $path;
+            }
+
+            // Update other profile fields (exclude avatar as it's handled separately)
+            $fillableFields = ['name', 'phone', 'birth_date', 'address', 'gender', 'position', 'department'];
+            foreach ($fillableFields as $field) {
+                if ($request->has($field) && $field !== 'avatar') {
+                    $user->$field = $request->$field;
+                }
+            }
+
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully',
+                'data' => [
+                    'id' => $user->id,
+                    'employee_id' => $user->employee_id ?? 'EMP' . str_pad($user->id, 3, '0', STR_PAD_LEFT),
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'birth_date' => $user->birth_date,
+                    'gender' => $user->gender,
+                    'address' => $user->address,
+                    'profile_picture' => $user->profile_picture,
+                    'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+                    'role' => $user->role ?? 'employee',
+                    'status' => $user->is_active ? 'active' : 'inactive',
+                    'is_active' => $user->is_active ?? true,
+                    'position' => $user->position ?? 'Employee',
+                    'department' => $user->department ?? 'General',
+                    'company_id' => $user->company_id,
+                    'updated_at' => $user->updated_at,
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Error updating profile: ' . $e->getMessage()
+            ], 500);
         }
-
-        $user->update($request->only(['name', 'phone', 'position', 'department', 'avatar']));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Profile updated successfully',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'employee_id' => $user->employee_id,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'position' => $user->position,
-                'department' => $user->department,
-                'company_id' => $user->company_id,
-                'is_active' => $user->is_active,
-                'avatar' => $user->avatar,
-                'updated_at' => $user->updated_at,
-            ]
-        ]);
     }
 
     /**

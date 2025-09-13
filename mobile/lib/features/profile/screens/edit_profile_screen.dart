@@ -4,10 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/profile_provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -68,9 +68,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final DateTime date = DateTime.parse(dateString);
-      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     } catch (e) {
       return dateString; // Return original string if parsing fails
+    }
+  }
+
+  String _formatDateForAPI(String displayDate) {
+    try {
+      // Convert from "DD/MM/YYYY" to "YYYY-MM-DD"
+      final parts = displayDate.split('/');
+      if (parts.length == 3) {
+        return '${parts[2]}-${parts[1]}-${parts[0]}';
+      }
+      return displayDate;
+    } catch (e) {
+      return displayDate;
     }
   }
 
@@ -86,21 +99,171 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _pickImage() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 80,
+      // Show bottom sheet to choose camera or gallery
+      final ImageSource? source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        builder: (context) => Container(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 50.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Text(
+                'Pilih Sumber Foto',
+                style: AppTheme.headingSmall,
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildImageSourceOption(
+                      icon: Icons.camera_alt,
+                      label: 'Kamera',
+                      onTap: () => Navigator.pop(context, ImageSource.camera),
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: _buildImageSourceOption(
+                      icon: Icons.photo_library,
+                      label: 'Galeri',
+                      onTap: () => Navigator.pop(context, ImageSource.gallery),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20.h),
+            ],
+          ),
+        ),
       );
 
-      if (image != null) {
-        setState(() {
-          _profileImage = File(image.path);
-        });
+      if (source != null) {
+        // Request permission for camera if needed
+        bool hasPermission = true;
+        if (source == ImageSource.camera) {
+          final status = await Permission.camera.request();
+          hasPermission = status.isGranted;
+
+          if (!hasPermission) {
+            _showErrorDialog('Izin kamera diperlukan untuk mengambil foto');
+            return;
+          }
+        }
+
+        final XFile? image = await _picker.pickImage(
+          source: source,
+          maxWidth: 1024,
+          maxHeight: 1024,
+          imageQuality: 85,
+        );
+
+        if (image != null) {
+          setState(() {
+            _profileImage = File(image.path);
+          });
+
+          // Show preview and option to crop/edit if needed
+          _showImagePreview();
+        }
       }
     } catch (e) {
       _showErrorDialog('Gagal memilih gambar: $e');
     }
+  }
+
+  Widget _buildImageSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 32.r,
+              color: AppTheme.primaryColor,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              label,
+              style: AppTheme.bodyMedium.copyWith(
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImagePreview() {
+    if (_profileImage == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: Text('Preview Foto Profil', style: AppTheme.headingSmall),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12.r),
+              child: Image.file(
+                _profileImage!,
+                width: 200.w,
+                height: 200.w,
+                fit: BoxFit.cover,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Foto akan digunakan sebagai foto profil Anda',
+              style: AppTheme.bodySmall.copyWith(color: AppTheme.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _profileImage = null;
+              });
+              Navigator.pop(context);
+            },
+            child: Text('Batal', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK', style: TextStyle(color: AppTheme.primaryColor)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _selectBirthDate() async {
@@ -138,12 +301,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final profileProvider =
           Provider.of<ProfileProvider>(context, listen: false);
 
+      // Convert birth date from display format (DD/MM/YYYY) to API format (YYYY-MM-DD)
+      String? formattedBirthDate;
+      if (_birthDateController.text.trim().isNotEmpty) {
+        formattedBirthDate =
+            _formatDateForAPI(_birthDateController.text.trim());
+      }
+
+      print('📷 Profile image before save: ${_profileImage?.path ?? "NULL"}');
+
       final success = await profileProvider.updateProfile(
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
-        birthDate: _birthDateController.text.trim().isNotEmpty
-            ? _birthDateController.text.trim()
-            : null,
+        birthDate: formattedBirthDate,
         address: _addressController.text.trim(),
         profileImage: _profileImage,
       );
@@ -337,27 +507,58 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildProfileImageSection() {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final user = authProvider.user;
+    final profileProvider = Provider.of<ProfileProvider>(context);
+    final userProfile = profileProvider.userProfile?['data'];
+
+    // Get profile picture URL
+    String? profilePictureUrl;
+    if (userProfile != null) {
+      // Try different possible field names from backend
+      var avatar = userProfile['avatar'];
+      var profilePicture = userProfile['profile_picture'];
+
+      // Handle case where avatar might be a Map or String
+      if (avatar is String && avatar.isNotEmpty) {
+        profilePictureUrl = avatar;
+      } else if (profilePicture is String && profilePicture.isNotEmpty) {
+        profilePictureUrl = profilePicture;
+      }
+    }
 
     return Center(
       child: Stack(
         children: [
-          CircleAvatar(
-            radius: 60.r,
-            backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-            backgroundImage: _profileImage != null
-                ? FileImage(_profileImage!)
-                : (user?.avatar != null
-                    ? CachedNetworkImageProvider(user!.avatar!)
-                    : null) as ImageProvider?,
-            child: _profileImage == null && user?.avatar == null
-                ? Icon(
-                    Icons.person,
-                    size: 60.r,
-                    color: AppTheme.primaryColor,
-                  )
-                : null,
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  blurRadius: 20.r,
+                  offset: Offset(0, 10.h),
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 60.r,
+              backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+              backgroundImage: _profileImage != null
+                  ? FileImage(_profileImage!) as ImageProvider
+                  : (profilePictureUrl != null && profilePictureUrl.isNotEmpty
+                      ? CachedNetworkImageProvider(profilePictureUrl
+                              .startsWith('http')
+                          ? profilePictureUrl
+                          : 'http://10.0.2.2:8000/storage/$profilePictureUrl')
+                      : null),
+              child: _profileImage == null &&
+                      (profilePictureUrl == null || profilePictureUrl.isEmpty)
+                  ? Icon(
+                      Icons.person,
+                      size: 60.r,
+                      color: AppTheme.primaryColor,
+                    )
+                  : null,
+            ),
           ),
           Positioned(
             bottom: 0,
@@ -365,20 +566,47 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: GestureDetector(
               onTap: _pickImage,
               child: Container(
-                padding: EdgeInsets.all(8.r),
+                padding: EdgeInsets.all(10.r),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(color: Colors.white, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8.r,
+                      offset: Offset(0, 2.h),
+                    ),
+                  ],
                 ),
                 child: Icon(
                   Icons.camera_alt,
                   color: Colors.white,
-                  size: 20.r,
+                  size: 18.r,
                 ),
               ),
             ),
           ),
+          // Loading indicator when uploading
+          if (_isLoading && _profileImage != null)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: SizedBox(
+                    width: 30.r,
+                    height: 30.r,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

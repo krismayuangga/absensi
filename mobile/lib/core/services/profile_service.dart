@@ -73,10 +73,14 @@ class ProfileService {
   }) async {
     try {
       print('🔄 Updating profile...');
+      print('📷 Profile image parameter: ${profileImage?.path ?? "NULL"}');
       _addAuthToken();
 
       // If there's a profile image, use FormData, otherwise use JSON
       if (profileImage != null) {
+        print('📤 Using FormData because image is provided');
+        print('📁 Image path: ${profileImage.path}');
+        print('📏 Image exists: ${await profileImage.exists()}');
         FormData formData = FormData();
 
         // Add profile data
@@ -94,7 +98,7 @@ class ProfileService {
         String fileName = profileImage.path.split('/').last;
         formData.files.add(
           MapEntry(
-            'profile_picture',
+            'avatar',
             await MultipartFile.fromFile(
               profileImage.path,
               filename: fileName,
@@ -102,7 +106,10 @@ class ProfileService {
           ),
         );
 
-        final response = await _dio.put(
+        // Add _method field for Laravel method spoofing
+        formData.fields.add(MapEntry('_method', 'PUT'));
+
+        final response = await _dio.post(
           '/v1/profile',
           data: formData,
           options: Options(
@@ -120,6 +127,7 @@ class ProfileService {
           return response.data;
         }
       } else {
+        print('📝 Using JSON because no image provided');
         // Use JSON for profile data without image
         Map<String, dynamic> updateData = {};
 
@@ -214,7 +222,7 @@ class ProfileService {
 
       String fileName = imageFile.path.split('/').last;
       FormData formData = FormData.fromMap({
-        'profile_picture': await MultipartFile.fromFile(
+        'avatar': await MultipartFile.fromFile(
           imageFile.path,
           filename: fileName,
         ),

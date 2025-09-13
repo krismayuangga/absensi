@@ -138,6 +138,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     // Direct profile route for convenience (maps to auth/profile)
     Route::get('profile', [AuthController::class, 'profile']);
     Route::put('profile', [AuthController::class, 'updateProfile']);
+    Route::post('profile', [AuthController::class, 'updateProfile']); // For FormData with method spoofing
 
         // Attendance routes
         Route::prefix('attendance')->group(function () {
