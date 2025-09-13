@@ -7,6 +7,7 @@ import 'dart:async';
 import '../../main.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/attendance_provider.dart';
+import '../../core/providers/info_media_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../attendance/clock_in_out_screen.dart';
 import '../leave/screens/leave_screen.dart';
@@ -600,96 +601,108 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Build notification button with badge and animation
   Widget _buildNotificationButton() {
-    // For now, simulate unread count - you can connect to actual provider later
-    int unreadCount = 3; // Simulated unread notifications
+    return Consumer<InfoMediaProvider>(
+      builder: (context, infoProvider, child) {
+        // Calculate real unread count from announcements
+        int unreadCount = 0;
+        if (infoProvider.announcements.isNotEmpty) {
+          unreadCount = infoProvider.announcements.where((announcement) {
+            // Check if announcement is read by looking at user_interactions
+            final userInteractions =
+                announcement['user_interactions'] as Map<String, dynamic>?;
+            return userInteractions?['is_read'] != true;
+          }).length;
+        }
 
-    return GestureDetector(
-      onTap: () {
-        // Navigate to Info tab with smooth animation
-        _handleInfo();
+        return GestureDetector(
+          onTap: () {
+            // Navigate to Info tab with smooth animation
+            _handleInfo();
 
-        // Show snackbar feedback
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '📢 Membuka halaman Informasi & Pengumuman',
-              style: GoogleFonts.inter(fontSize: 12.sp),
-            ),
-            backgroundColor: AppTheme.primaryColor,
-            duration: Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.all(16.w),
-            shape: RoundedRectangleBorder(
+            // Show snackbar feedback
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '📢 Membuka halaman Informasi & Pengumuman',
+                  style: GoogleFonts.inter(fontSize: 12.sp),
+                ),
+                backgroundColor: AppTheme.primaryColor,
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.all(16.w),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+              ),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8.r),
+              // Add subtle shadow for depth
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Main notification icon
+                Icon(
+                  Icons.notifications_outlined,
+                  size: 20.w,
+                  color: Colors.white,
+                ),
+
+                // Badge for unread count
+                if (unreadCount > 0)
+                  Positioned(
+                    right: -2.w,
+                    top: -2.h,
+                    child: Container(
+                      constraints: BoxConstraints(minWidth: 14.w),
+                      height: 14.w,
+                      padding: EdgeInsets.symmetric(horizontal: 2.w),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(7.r),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        unreadCount > 9 ? '9+' : unreadCount.toString(),
+                        style: GoogleFonts.inter(
+                          fontSize: 8.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+
+                // Animated pulse for new notifications
+                if (unreadCount > 0)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         );
       },
-      child: Container(
-        padding: EdgeInsets.all(8.w),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(8.r),
-          // Add subtle shadow for depth
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Main notification icon
-            Icon(
-              Icons.notifications_outlined,
-              size: 20.w,
-              color: Colors.white,
-            ),
-
-            // Badge for unread count
-            if (unreadCount > 0)
-              Positioned(
-                right: -2.w,
-                top: -2.h,
-                child: Container(
-                  constraints: BoxConstraints(minWidth: 14.w),
-                  height: 14.w,
-                  padding: EdgeInsets.symmetric(horizontal: 2.w),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(7.r),
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    unreadCount > 9 ? '9+' : unreadCount.toString(),
-                    style: GoogleFonts.inter(
-                      fontSize: 8.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-
-            // Animated pulse for new notifications
-            if (unreadCount > 0)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 
