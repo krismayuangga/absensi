@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({Key? key}) : super(key: key);
@@ -3314,11 +3316,17 @@ class _AdminMediaTabState extends State<AdminMediaTab> {
   }
 
   Widget _buildImageWidget(Map<String, dynamic> media) {
-    final imageUrl = media['file_url'];
+    var imageUrl = media['file_url'];
     print('🖼️ Building image widget for URL: $imageUrl');
 
+    // Fix relative URL by adding base URL
+    if (imageUrl != null && imageUrl.startsWith('/')) {
+      imageUrl = 'http://10.0.2.2:8000$imageUrl';
+      print('🔧 Fixed URL: $imageUrl');
+    }
+
     return CachedNetworkImage(
-      imageUrl: imageUrl,
+      imageUrl: imageUrl ?? '',
       fit: BoxFit.cover,
       httpHeaders: {
         'Accept': 'image/*',
@@ -3346,7 +3354,7 @@ class _AdminMediaTabState extends State<AdminMediaTab> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Error',
+                'Gagal memuat',
                 style: TextStyle(
                   fontSize: 10,
                   color: Colors.red[600],
@@ -3608,6 +3616,10 @@ class _UploadMediaDialogState extends State<UploadMediaDialog> {
   String _mediaType = 'image';
   String _category = 'general';
 
+  File? _selectedFile;
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploading = false;
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -3638,14 +3650,7 @@ class _UploadMediaDialogState extends State<UploadMediaDialog> {
                   child: Column(
                     children: [
                       GestureDetector(
-                        onTap: () {
-                          // TODO: Implement file picker
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text('Pilih file akan diimplementasi')),
-                          );
-                        },
+                        onTap: _showImageSourceDialog,
                         child: Container(
                           width: double.infinity,
                           height: 120,
@@ -3653,25 +3658,33 @@ class _UploadMediaDialogState extends State<UploadMediaDialog> {
                             border: Border.all(color: Colors.grey[300]!),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.cloud_upload,
-                                  size: 48, color: Colors.grey[400]),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Tap untuk pilih file',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                              Text(
-                                'JPG, PNG, PDF, DOC maksimal 5MB',
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
+                          child: _selectedFile != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    _selectedFile!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.cloud_upload,
+                                        size: 48, color: Colors.grey[400]),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Tap untuk pilih file',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                    Text(
+                                      'JPG, PNG, PDF, DOC maksimal 5MB',
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -3749,12 +3762,22 @@ class _UploadMediaDialogState extends State<UploadMediaDialog> {
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
-                    onPressed: _submitForm,
+                    onPressed: _isUploading ? null : _submitForm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Upload'),
+                    child: _isUploading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('Upload'),
                   ),
                 ],
               ),
@@ -3765,13 +3788,118 @@ class _UploadMediaDialogState extends State<UploadMediaDialog> {
     );
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement API call to upload media
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Media berhasil diupload')),
+  void _showImageSourceDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pilih Sumber Gambar'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Kamera'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galeri'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
       );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedFile = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error mengambil gambar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      if (_selectedFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Silakan pilih file terlebih dahulu'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _isUploading = true;
+      });
+
+      try {
+        final provider =
+            Provider.of<AdminContentProvider>(context, listen: false);
+        final success = await provider.uploadMediaFromFile(
+          file: _selectedFile!,
+          title: _titleController.text,
+          description: _descriptionController.text,
+          mediaType: _mediaType,
+          category: _category,
+        );
+
+        if (success) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Media berhasil diupload')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.errorMessage ?? 'Gagal mengupload media'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        setState(() {
+          _isUploading = false;
+        });
+      }
     }
   }
 }

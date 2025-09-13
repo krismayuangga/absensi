@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../services/admin_content_service.dart';
 
 class AdminContentProvider with ChangeNotifier {
@@ -251,12 +252,13 @@ class AdminContentProvider with ChangeNotifier {
     }
   }
 
-  /// Upload new media
+  /// Upload new media from file path
   Future<bool> uploadMedia({
     required String filePath,
     required String title,
     String? description,
     required String category,
+    String? mediaType,
   }) async {
     try {
       _isLoading = true;
@@ -268,6 +270,7 @@ class AdminContentProvider with ChangeNotifier {
         title: title,
         description: description,
         category: category,
+        mediaType: mediaType,
       );
 
       if (response['success']) {
@@ -288,6 +291,23 @@ class AdminContentProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Upload new media from File object
+  Future<bool> uploadMediaFromFile({
+    required File file,
+    required String title,
+    String? description,
+    required String mediaType,
+    required String category,
+  }) async {
+    return uploadMedia(
+      filePath: file.path,
+      title: title,
+      description: description,
+      category: category,
+      mediaType: mediaType,
+    );
   }
 
   /// Delete media

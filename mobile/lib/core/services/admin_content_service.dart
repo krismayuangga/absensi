@@ -239,7 +239,7 @@ class AdminContentService {
 
       print('🔄 Getting admin media...');
       final response = await _dio.get(
-        '/info-media/media',
+        '/v1/admin/content/media',
         queryParameters: queryParams,
       );
 
@@ -270,6 +270,7 @@ class AdminContentService {
     required String title,
     String? description,
     required String category,
+    String? mediaType,
   }) async {
     try {
       _addAuthToken();
@@ -279,19 +280,20 @@ class AdminContentService {
         'title': title,
         'description': description ?? '',
         'category': category,
+        'type': mediaType ?? 'image',
       });
 
       print('🔄 Uploading media...');
       final response = await _dio.post(
-        '/info-media/media', // Use working endpoint
+        '/v1/admin/content/media', // Correct admin endpoint
         data: formData,
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return {
-          'success': true,
+          'success': response.data['status'] == 'success',
           'data': response.data['data'],
-          'message': response.data['message'],
+          'message': response.data['message'] ?? 'Media uploaded successfully',
         };
       }
 
@@ -319,8 +321,8 @@ class AdminContentService {
     try {
       _addAuthToken();
 
-      final response =
-          await _dio.delete('/info-media/media/$id'); // Use working endpoint
+      final response = await _dio
+          .delete('/v1/admin/content/media/$id'); // Correct admin endpoint
 
       if (response.statusCode == 200) {
         return {
