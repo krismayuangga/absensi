@@ -1,0 +1,31 @@
+DOMAINESIA HOSTING DEPLOYMENT INSTRUCTIONS
+==========================================
+
+1. UPLOAD FILES:
+   - Upload the contents of 'backend_production' folder to your public_html directory
+   - Make sure the 'public' folder content goes to public_html root
+   - Other Laravel files (app, config, etc.) should be in public_html
+
+2. DATABASE SETUP:
+   - Create a MySQL database in cPanel
+   - Note the database name, username, and password
+   - Update .env file with your database credentials
+
+3. ENVIRONMENT CONFIGURATION:
+   - Edit .env file with your production settings:
+     * APP_URL=https://yourdomain.com
+     * DB_DATABASE=your_database_name
+     * DB_USERNAME=your_db_username
+     * DB_PASSWORD=your_db_password
+   
+4. FINAL STEPS:
+   - Run: php artisan migrate --force (via terminal if available)
+   - Run: php artisan db:seed --force
+   - Test your application
+   
+5. IMPORTANT SECURITY:
+   - Ensure APP_DEBUG=false in production
+   - Keep your .env file secure
+   - Regularly backup your database
+
+Your Laravel backend is ready for Domainesia hosting!

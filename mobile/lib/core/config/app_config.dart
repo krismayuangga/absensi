@@ -1,10 +1,10 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
 class AppConfig {
-  // API Configuration
+  // API Configuration - PRODUCTION
   static const String baseUrl =
-      'http://10.0.2.2:8000/api/v1'; // Laravel backend API with v1 prefix
-  static const String imageBaseUrl = 'http://10.0.2.2:8000/storage';
+      'https://kpi.kinerja.io/api/v1'; // Production Laravel backend API
+  static const String imageBaseUrl = 'https://kpi.kinerja.io/storage';
 
   // Storage Keys
   static const String tokenKey = 'auth_token';
@@ -19,7 +19,7 @@ class AppConfig {
   static const String attendanceBox = 'attendance_box';
 
   // App Configuration
-  static const String appName = 'Attendance & KPI';
+  static const String appName = 'OZ3 KPI';
   static const String appVersion = '1.0.0';
 
   // Location Configuration

@@ -3,8 +3,7 @@ import '../config/app_config.dart';
 
 class InfoMediaService {
   final Dio _dio = Dio();
-  static const String baseUrl =
-      'http://10.0.2.2:8000/api'; // Remove /v1 for info-media endpoints
+  static const String baseUrl = 'https://kpi.kinerja.io/api';
 
   InfoMediaService() {
     _dio.options.baseUrl = baseUrl;
